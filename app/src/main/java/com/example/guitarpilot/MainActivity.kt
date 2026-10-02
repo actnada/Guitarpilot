@@ -5,6 +5,7 @@ import android.widget.Button
 import android.widget.PopupMenu
 import android.widget.SeekBar
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import java.io.BufferedInputStream
 import java.io.DataInputStream
@@ -653,7 +654,15 @@ class MainActivity : AppCompatActivity() {
             }
 
             button.setOnLongClickListener {
-                showChordAssignmentMenu(button, slot)
+                if (isPlaying) {
+                    Toast.makeText(
+                        this,
+                        "Pausa o detén la reproducción para cambiar este botón",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                } else {
+                    showChordAssignmentMenu(button, slot)
+                }
                 true
             }
         }
