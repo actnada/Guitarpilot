@@ -440,3 +440,26 @@ sensación rítmica con la implementación técnica.
 
 - `main`: v0.10 Humanization Lab, probada y promovida.
 - `testing`: v0.11 y siguientes experimentos.
+
+
+## v0.11 — ajuste de cambio de acorde hacia cuerdas muteadas
+
+Se corrigió una posible causa del comportamiento extraño del bajo de C.
+
+Caso típico:
+- G o Em dejan resonando la 6.ª cuerda.
+- Al cambiar a C = `x32010`, esa cuerda debe desaparecer.
+- Antes, el motor cancelaba solo voces futuras y permitía que la cola activa
+  siguiera sonando debajo del nuevo acorde.
+
+Nuevo comportamiento:
+- si una cuerda pasa a `fret < 0` en el nuevo acorde, la voz activa entra en
+  un release corto de 20 ms;
+- si la cuerda sigue permitida pero cambia de traste, se conserva la lógica
+  anterior: solo se cancelan voces futuras y la cola activa termina de forma
+  natural.
+
+Objetivo de la prueba:
+- comparar G→C y Em→C;
+- escuchar si desaparece el grave residual bajo C;
+- confirmar que no reaparece la pausa audible entre cambios de acorde.
