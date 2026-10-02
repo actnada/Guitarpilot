@@ -87,7 +87,7 @@ class RhythmEditorActivity : AppCompatActivity() {
         findViewById<Button>(R.id.btnExportJson).setOnClickListener {
             runCatching {
                 val definition = RhythmJsonCodec.parse(editJson.text.toString())
-                "\${definition.id}.json"
+                "${definition.id}.json"
             }.onSuccess { name ->
                 exportLauncher.launch(name)
             }.onFailure {
@@ -154,8 +154,8 @@ class RhythmEditorActivity : AppCompatActivity() {
             }
 
             txtStatus.text =
-                "Cargado: \${definition.name} · \${definition.defaultBpm} BPM · " +
-                "\${definition.events.size} eventos"
+                "Cargado: ${definition.name} · ${definition.defaultBpm} BPM · " +
+                "${definition.events.size} eventos"
 
             refreshEventSummary(definition)
             true
@@ -192,7 +192,7 @@ class RhythmEditorActivity : AppCompatActivity() {
             editJson.setText(RhythmJsonCodec.toJson(definition))
             refreshEventSummary(definition)
             txtStatus.text =
-                "Evento \${selectedEvent + 1}: offset \${event.offsetMs} ms. " +
+                "Evento ${selectedEvent + 1}: offset ${event.offsetMs} ms. " +
                 "Pulsa PROBAR para escuchar."
         }.onFailure {
             showError(it)
@@ -208,16 +208,16 @@ class RhythmEditorActivity : AppCompatActivity() {
             val event = def.events[selectedEvent]
 
             txtEvent.text =
-                "Evento \${selectedEvent + 1}/\${def.events.size} · " +
-                "tick \${event.tick} · \${event.type} · \${event.target} · " +
-                "offset \${event.offsetMs} ms"
+                "Evento ${selectedEvent + 1}/${def.events.size} · " +
+                "tick ${event.tick} · ${event.type} · ${event.target} · " +
+                "offset ${event.offsetMs} ms"
         }.onFailure {
             txtEvent.text = "JSON pendiente de validar"
         }
     }
 
     private fun showError(error: Throwable) {
-        txtStatus.text = "ERROR: \${error.message ?: "JSON inválido"}"
+        txtStatus.text = "ERROR: ${error.message ?: "JSON inválido"}"
         toast(error.message ?: "JSON inválido")
     }
 
