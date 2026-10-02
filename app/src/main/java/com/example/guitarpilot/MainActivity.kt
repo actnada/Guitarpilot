@@ -669,8 +669,8 @@ class MainActivity : AppCompatActivity() {
             9 -> "CB BALLAD B · 13 ms POR CUERDA"
             10 -> "ZONAS · referencia limpia"
             11 -> "ZONAS HUMAN · microtiming + dinámica"
-            12 -> "ROCK PULSE 01 · BON CHA-CA"
-            13 -> "BALLAD PULSE 01 · NO NO ahora no ahora no"
+            12 -> "ROCK PULSE 01 · agudas ↑↓ + bajo"
+            13 -> "LATIN BALLAD 01 · agudas ↓↑ alternadas"
             else -> "Patrón experimental"
         }
     }
@@ -691,8 +691,8 @@ class MainActivity : AppCompatActivity() {
             9 to "CB Ballad · 13 ms",
             10 to "Zonas · referencia",
             11 to "Zonas Human",
-            12 to "Rock Pulse 01 · BON CHA-CA",
-            13 to "Ballad Pulse 01 · NO NO ahora no ahora no"
+            12 to "Rock Pulse 01 · agudas ↑↓ + bajo",
+            13 to "Latin Ballad 01 · agudas ↓↑"
         )
 
         patterns.forEach { (id, name) ->
