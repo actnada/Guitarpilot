@@ -463,3 +463,30 @@ Objetivo de la prueba:
 - comparar G→C y Em→C;
 - escuchar si desaparece el grave residual bajo C;
 - confirmar que no reaparece la pausa audible entre cambios de acorde.
+
+
+## v0.11 — reajuste de los dos ritmos nuevos tras prueba auditiva
+
+La primera implementación de los patrones 12 y 13 no reprodujo correctamente
+la sensación buscada. Se reescribieron siguiendo la descripción física de la
+mano en lugar de la primera aproximación verbal.
+
+### Pattern 12 — Rock Pulse 01
+Nuevo ciclo:
+- rasgueo UP solo en cuerdas 3,2,1;
+- inmediatamente rasgueo DOWN solo en cuerdas 3,2,1;
+- inmediatamente bajo raíz;
+- una semicorchea de espera;
+- repetir.
+
+Referencia verbal interna:
+`↑ ↓ BAJO · | ↑ ↓ BAJO ·`
+
+### Pattern 13 — Latin Ballad 01
+Referencia de prueba: acompañamiento asociado a "Hojas Secas".
+
+- conserva los eventos de bajo separados;
+- los golpes agudos usan `TREBLE_4`, por lo que omiten cuerdas 5 y 6;
+- la dirección de los agudos alterna empezando DOWN:
+  `DOWN / UP / DOWN / UP...`;
+- la alternancia de dirección afecta solo a los agudos.
