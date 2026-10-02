@@ -1,5 +1,6 @@
 package com.example.guitarpilot
 
+import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
 import android.widget.PopupMenu
@@ -473,6 +474,20 @@ class MainActivity : AppCompatActivity() {
             showPatternMenu(anchor as Button)
         }
 
+        findViewById<Button>(
+            R.id.btnRhythmEditor
+        ).setOnClickListener {
+            if (isPlaying) {
+                Toast.makeText(
+                    this,
+                    "Pausa la reproducción antes de abrir el editor",
+                    Toast.LENGTH_SHORT
+                ).show()
+            } else {
+                startActivity(Intent(this, RhythmEditorActivity::class.java))
+            }
+        }
+
         // Accesos rápidos provisionales. Más adelante podrán ser configurables.
         findViewById<Button>(
             R.id.btnQuickPattern1
@@ -733,6 +748,10 @@ class MainActivity : AppCompatActivity() {
     private fun selectPattern(
         id: Int
     ) {
+        RhythmSession.currentCustomName = null
+        RhythmSession.currentCustomBpm = null
+        NativeAudioEngine.clearCustomPattern()
+
         currentPattern = id
 
         // Para las pruebas Golden arrancamos al BPM exacto
@@ -817,7 +836,9 @@ class MainActivity : AppCompatActivity() {
             "Volumen master: $masterVolume%"
 
         txtPattern.text =
-            patternName()
+            RhythmSession.currentCustomName?.let {
+                "JSON · $it"
+            } ?: patternName()
 
         btnPlayPause.text =
             if (isPlaying) {
@@ -825,6 +846,16 @@ class MainActivity : AppCompatActivity() {
             } else {
                 "▶ PLAY"
             }
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        RhythmSession.currentCustomBpm?.let {
+            bpm = it
+        }
+
+        updateUi()
     }
 
     override fun onDestroy() {
