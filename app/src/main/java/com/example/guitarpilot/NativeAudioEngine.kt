@@ -26,6 +26,21 @@ object NativeAudioEngine {
     external fun setPattern(pattern: Int)
     external fun setMasterVolume(volume: Float)
 
+    external fun setCustomPattern(
+        ticksPerBar: Int,
+        ticks: IntArray,
+        offsetsMs: IntArray,
+        types: IntArray,
+        targets: IntArray,
+        layers: IntArray,
+        stringNumbers: IntArray,
+        velocities: FloatArray,
+        spreadsMs: FloatArray,
+        humanizeFlags: IntArray
+    ): Boolean
+
+    external fun clearCustomPattern()
+
     external fun manualStrumDown()
     external fun manualStrumUp()
 }
