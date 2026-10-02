@@ -313,9 +313,17 @@ void GuitarEngine::applyPendingChordChange() {
         // dejamos que siga resonando.
         if (oldFret == newFret) continue;
 
-        // Si cambia de nota o queda muteada, cancelamos solo voces FUTURAS.
-        // Las colas que ya están sonando se dejan terminar naturalmente.
-        // Esto evita el hueco audible que aparecía al cambiar de acorde.
+        // Si la nueva digitación MUTEA esta cuerda, hacemos un release corto
+        // de la voz ya activa. Esto evita que, por ejemplo, la 6a cuerda de
+        // G/Em siga resonando debajo de C = x32010 y ensucie su bajo.
+        if (newFret < 0) {
+            releaseString(physicalString, 20);
+            continue;
+        }
+
+        // Si la cuerda sigue permitida pero cambia de nota, conservamos la
+        // estrategia v0.8/v0.10: cancelamos solo voces FUTURAS. La cola activa
+        // termina de forma natural y el siguiente ataque reemplaza la cuerda.
         cancelFutureVoicesOnString(physicalString);
     }
 
