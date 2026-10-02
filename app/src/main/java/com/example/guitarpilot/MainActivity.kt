@@ -2,6 +2,7 @@ package com.example.guitarpilot
 
 import android.os.Bundle
 import android.widget.Button
+import android.widget.PopupMenu
 import android.widget.SeekBar
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -493,75 +494,22 @@ class MainActivity : AppCompatActivity() {
         }
 
         findViewById<Button>(
-            R.id.btnPatternPopRock
+            R.id.btnPatternMenu
+        ).setOnClickListener { anchor ->
+            showPatternMenu(anchor as Button)
+        }
+
+        // Accesos rápidos provisionales. Más adelante podrán ser configurables.
+        findViewById<Button>(
+            R.id.btnQuickPattern1
         ).setOnClickListener {
-            selectPattern(0)
+            selectPattern(11) // ZONAS HUMAN
         }
 
         findViewById<Button>(
-            R.id.btnPatternBallad
+            R.id.btnQuickPattern2
         ).setOnClickListener {
-            selectPattern(1)
-        }
-
-        findViewById<Button>(
-            R.id.btnPatternArpeggio
-        ).setOnClickListener {
-            selectPattern(2)
-        }
-
-        findViewById<Button>(
-            R.id.btnPatternRockMuted
-        ).setOnClickListener {
-            selectPattern(3)
-        }
-
-        findViewById<Button>(
-            R.id.btnPatternGoldenStrum
-        ).setOnClickListener {
-            selectPattern(4)
-        }
-
-        findViewById<Button>(
-            R.id.btnPatternGoldenFolk
-        ).setOnClickListener {
-            selectPattern(5)
-        }
-
-        findViewById<Button>(
-            R.id.btnPatternCbFolk20
-        ).setOnClickListener {
-            selectPattern(6)
-        }
-
-        findViewById<Button>(
-            R.id.btnPatternCbFolk13
-        ).setOnClickListener {
-            selectPattern(7)
-        }
-
-        findViewById<Button>(
-            R.id.btnPatternCbBallad20
-        ).setOnClickListener {
-            selectPattern(8)
-        }
-
-        findViewById<Button>(
-            R.id.btnPatternCbBallad13
-        ).setOnClickListener {
-            selectPattern(9)
-        }
-
-        findViewById<Button>(
-            R.id.btnPatternStringZones
-        ).setOnClickListener {
-            selectPattern(10)
-        }
-
-        findViewById<Button>(
-            R.id.btnPatternStringZonesHuman
-        ).setOnClickListener {
-            selectPattern(11)
+            selectPattern(2) // PIMAMI
         }
 
         findViewById<Button>(
@@ -698,6 +646,8 @@ class MainActivity : AppCompatActivity() {
             8, 9 -> bpm = 90  // ChordBox Pop Ballad A/B
             10 -> bpm = 100   // prueba de zonas físicas
             11 -> bpm = 100   // mismo patrón con humanización controlada
+            12 -> bpm = 100   // ROCK PULSE · "BON CHA-CA"
+            13 -> bpm = 90    // BALLAD PULSE · "NO NO ahora no ahora no"
         }
 
         NativeAudioEngine.setBpm(bpm)
@@ -719,8 +669,42 @@ class MainActivity : AppCompatActivity() {
             9 -> "CB BALLAD B · 13 ms POR CUERDA"
             10 -> "ZONAS · referencia limpia"
             11 -> "ZONAS HUMAN · microtiming + dinámica"
+            12 -> "ROCK PULSE 01 · BON CHA-CA"
+            13 -> "BALLAD PULSE 01 · NO NO ahora no ahora no"
             else -> "Patrón experimental"
         }
+    }
+
+    private fun showPatternMenu(anchor: Button) {
+        val popup = PopupMenu(this, anchor)
+
+        val patterns = listOf(
+            0 to "Pop/Rock",
+            1 to "Balada Rock",
+            2 to "PIMAMI",
+            3 to "Rock Muted",
+            4 to "Golden 01 · ako",
+            5 to "Golden 02 · folk",
+            6 to "CB Folk · 20 ms",
+            7 to "CB Folk · 13 ms",
+            8 to "CB Ballad · 20 ms",
+            9 to "CB Ballad · 13 ms",
+            10 to "Zonas · referencia",
+            11 to "Zonas Human",
+            12 to "Rock Pulse 01 · BON CHA-CA",
+            13 to "Ballad Pulse 01 · NO NO ahora no ahora no"
+        )
+
+        patterns.forEach { (id, name) ->
+            popup.menu.add(0, id, id, name)
+        }
+
+        popup.setOnMenuItemClickListener { item ->
+            selectPattern(item.itemId)
+            true
+        }
+
+        popup.show()
     }
 
     private fun updateUi() {
