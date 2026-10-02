@@ -12,6 +12,11 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.GuitarPilotOboe">
         <activity
+            android:name=".RhythmEditorActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
             android:name=".MainActivity"
             android:exported="true"
             android:windowSoftInputMode="adjustResize">
