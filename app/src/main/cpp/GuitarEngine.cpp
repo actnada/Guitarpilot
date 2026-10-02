@@ -894,12 +894,22 @@ void GuitarEngine::triggerCustomPatternEvent(
             }
 
             case EVENT_ROOT_BASS: {
-                const auto& chord =
-                    mChords[std::clamp(
-                        mAppliedChord, 0, kChordCount - 1)];
-                triggerPluckString(
-                    chord.rootBassString, chord.rootBassFret,
-                    eventFrame, event.velocity, event.layer);
+                if (event.humanize) {
+                    triggerHumanizedTargetStrum(
+                        true,
+                        eventFrame,
+                        event.velocity,
+                        ROOT_BASS,
+                        event.layer,
+                        0.0);
+                } else {
+                    const auto& chord =
+                        mChords[std::clamp(
+                            mAppliedChord, 0, kChordCount - 1)];
+                    triggerPluckString(
+                        chord.rootBassString, chord.rootBassFret,
+                        eventFrame, event.velocity, event.layer);
+                }
                 break;
             }
 
