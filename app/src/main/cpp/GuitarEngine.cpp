@@ -107,7 +107,7 @@ void GuitarEngine::setStringDelayMs(int ms) {
 }
 
 void GuitarEngine::setPattern(int pattern) {
-    const int value = std::clamp(pattern, 0, 10);
+    const int value = std::clamp(pattern, 0, 11);
     mPattern.store(value);
 
     // Para esta etapa de prototipo reiniciamos la fase del patrón al cambiar
@@ -548,6 +548,136 @@ void GuitarEngine::triggerTargetStrum(
     }
 }
 
+uint32_t GuitarEngine::nextHumanRandom() {
+    // xorshift32: suficiente para microvariaciones musicales y barato
+    // para el callback de audio.
+    uint32_t x = mHumanRngState;
+    x ^= x << 13;
+    x ^= x >> 17;
+    x ^= x << 5;
+    mHumanRngState = x;
+    return x;
+}
+
+float GuitarEngine::nextHumanUnit() {
+    // 24 bits útiles -> [0,1].
+    return static_cast<float>(nextHumanRandom() & 0x00FFFFFFu) /
+           static_cast<float>(0x00FFFFFFu);
+}
+
+void GuitarEngine::triggerHumanizedTargetStrum(
+    bool down,
+    int64_t startFrame,
+    float velocity,
+    StringTarget target,
+    int preferredLayer,
+    double baseTotalSpreadMs) {
+
+    const auto& chord =
+        mChords[std::clamp(mAppliedChord, 0, 5)];
+
+    // El scheduler musical conserva el tick exacto. La interpretación
+    // recibe una ventana local de 0..6 ms (centro 3 ms, jitter +/-3 ms).
+    // Así no acumulamos deriva de tempo entre eventos.
+    const double timingJitterMs =
+        (static_cast<double>(nextHumanUnit()) * 6.0) - 3.0;
+    const double localDelayMs = 3.0 + timingJitterMs;
+
+    const int64_t localDelayFrames = static_cast<int64_t>(
+        std::llround((std::max(0.0, localDelayMs) / 1000.0) *
+                     mOutputSampleRate));
+
+    const int64_t eventFrame = startFrame + localDelayFrames;
+
+    // +/-3% de energía por golpe.
+    const float eventGain =
+        0.97f + nextHumanUnit() * 0.06f;
+
+    if (target == ROOT_BASS) {
+        triggerPluckString(
+            chord.rootBassString,
+            chord.rootBassFret,
+            eventFrame,
+            velocity * eventGain,
+            preferredLayer);
+        return;
+    }
+
+    struct Hit {
+        int physicalString;
+        int fret;
+    };
+
+    std::array<Hit, 6> hits{};
+    int count = 0;
+
+    for (int chordPos = 0; chordPos < 6; ++chordPos) {
+        const int physicalString = 6 - chordPos;
+        const int fret = chord.fret[chordPos];
+
+        if (fret < 0) continue;
+
+        bool targetAllows = false;
+        switch (target) {
+            case ALL_ALLOWED:
+                targetAllows = true;
+                break;
+            case BASS_3:
+                targetAllows = physicalString >= 4;
+                break;
+            case TREBLE_3:
+                targetAllows = physicalString <= 3;
+                break;
+            case TREBLE_4:
+                targetAllows = physicalString <= 4;
+                break;
+            case ROOT_BASS:
+                break;
+        }
+
+        if (!targetAllows) continue;
+        hits[count++] = {physicalString, fret};
+    }
+
+    if (count <= 0) return;
+
+    // Cada rasgueo recorre las cuerdas ligeramente distinto (+/-10%).
+    const double spreadScale =
+        0.90 + static_cast<double>(nextHumanUnit()) * 0.20;
+    const double totalSpreadMs =
+        std::max(0.0, baseTotalSpreadMs) * spreadScale;
+
+    int64_t delayFrames = 0;
+    if (count > 1) {
+        const double perStringMs =
+            totalSpreadMs / static_cast<double>(count - 1);
+
+        delayFrames = static_cast<int64_t>(
+            std::llround((perStringMs / 1000.0) * mOutputSampleRate));
+    }
+
+    for (int n = 0; n < count; ++n) {
+        const int pos = down ? n : (count - 1 - n);
+        const auto& hit = hits[pos];
+
+        const int sampleIndex = sampleWithFallback(
+            hit.physicalString, hit.fret, preferredLayer);
+        if (sampleIndex < 0) continue;
+
+        // Conserva la caída física del golpe y añade +/-3% por cuerda.
+        const float directionFalloff =
+            std::max(0.70f, 1.0f - 0.045f * n);
+        const float stringVariation =
+            0.97f + nextHumanUnit() * 0.06f;
+
+        startVoice(
+            sampleIndex,
+            hit.physicalString,
+            eventFrame + static_cast<int64_t>(n) * delayFrames,
+            velocity * eventGain * directionFalloff * stringVariation);
+    }
+}
+
 void GuitarEngine::triggerChordWithoutRootBass(
     int64_t startFrame,
     float velocity,
@@ -787,6 +917,42 @@ void GuitarEngine::triggerPatternEvent(
                 break;
             case 14:
                 triggerTargetStrum(true, tickFrame, 0.80f, ALL_ALLOWED, MF, 20.0);
+                break;
+            default:
+                break;
+        }
+    } else if (pattern == 11) {
+        // ZONAS HUMAN — mismo patrón de ZONAS, pero con una capa controlada
+        // de interpretación inspirada en lo observado en Unreal/FSZ:
+        // - reloj musical intacto;
+        // - 0..6 ms de retardo local por evento (centro 3 ms);
+        // - +/-10% de spread total;
+        // - +/-3% de ganancia por golpe y por cuerda.
+        // Sirve como A/B directo contra pattern 10.
+        switch (tick) {
+            case 0:
+                triggerHumanizedTargetStrum(true, tickFrame, 0.84f, BASS_3, MF, 14.0);
+                break;
+            case 2:
+                triggerHumanizedTargetStrum(false, tickFrame, 0.56f, TREBLE_3, MF, 12.0);
+                break;
+            case 4:
+                triggerHumanizedTargetStrum(true, tickFrame, 0.78f, ALL_ALLOWED, MF, 20.0);
+                break;
+            case 6:
+                triggerHumanizedTargetStrum(false, tickFrame, 0.58f, TREBLE_4, MF, 14.0);
+                break;
+            case 8:
+                triggerHumanizedTargetStrum(true, tickFrame, 0.82f, ROOT_BASS, MF, 0.0);
+                break;
+            case 10:
+                triggerHumanizedTargetStrum(false, tickFrame, 0.54f, TREBLE_3, MF, 12.0);
+                break;
+            case 12:
+                triggerHumanizedTargetStrum(true, tickFrame, 0.76f, BASS_3, MF, 14.0);
+                break;
+            case 14:
+                triggerHumanizedTargetStrum(true, tickFrame, 0.80f, ALL_ALLOWED, MF, 20.0);
                 break;
             default:
                 break;
