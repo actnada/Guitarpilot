@@ -166,3 +166,47 @@ Para C, `ROOT_BASS` no busca "la primera cuerda grave válida": usa directamente
 3. Probar `ZONAS` con C, G, D, Em y Bm.
 4. En C escuchar especialmente la diferencia entre la zona grave y el evento ROOT_BASS.
 5. Si minimizar todavía corta el audio, registrar el video/logcat: el siguiente paso será Foreground Service.
+
+
+# v0.10 — Humanization Lab
+
+Esta versión conserva intacto el patrón `ZONAS` de v0.9 y añade un A/B
+controlado llamado `ZONAS HUMAN`.
+
+## Qué cambia en ZONAS HUMAN
+
+El reloj musical sigue siendo exacto. La humanización se aplica únicamente
+al gesto que genera cada evento:
+
+- retardo local por evento entre 0 y 6 ms, centrado alrededor de 3 ms;
+- variación de +/-10% en el spread total del rasgueo;
+- variación de +/-3% en la energía global del golpe;
+- variación adicional de +/-3% por cuerda;
+- se conserva la caída natural de energía desde la primera cuerda tocada;
+- las máscaras `BASS_3`, `TREBLE_3`, `TREBLE_4`, `ALL_ALLOWED` y
+  `ROOT_BASS` siguen funcionando exactamente como en v0.9.
+
+La implementación usa un PRNG xorshift32 muy ligero dentro del hilo de audio
+y no usa `std::random` ni asignaciones dinámicas durante el callback.
+
+## Por qué se prueba como A/B
+
+`ZONAS` queda como referencia limpia y `ZONAS HUMAN` usa exactamente la
+misma secuencia de eventos. De este modo se puede juzgar únicamente si la
+microvariación mejora o empeora la interpretación.
+
+## Bajo de C
+
+No se modifica todavía su ruta porque `ROOT_BASS` sigue resolviendo
+explícitamente C como cuerda 5, traste 3 (C3), y ese mismo sample funciona
+correctamente en PIMAMI. El comportamiento extraño restante se seguirá
+aislando comparando `ZONAS` contra `ZONAS HUMAN` y, si hace falta, con
+una prueba dedicada del bajo.
+
+## Prueba recomendada
+
+1. Probar `ZONAS` con G, D, Em, C y Bm.
+2. Cambiar a `ZONAS HUMAN` sin cambiar BPM ni volumen.
+3. Escuchar si desaparece parte de la repetición mecánica.
+4. Prestar atención especial a C en los eventos de zona grave y ROOT_BASS.
+5. Confirmar que cambiar de acorde no reinicia el transporte.
