@@ -19,6 +19,13 @@ class MainActivity : AppCompatActivity() {
         // recreaciones de la pantalla mientras el proceso siga vivo.
         private var isPlaying = false
         private var currentChord = "OPEN"
+        private var currentChordId = 0
+
+        // Seis accesos visibles. Toque = tocar acorde.
+        // Mantener pulsado = reasignar el botón.
+        // Valores iniciales: C, G, D, Em, Am, Bm.
+        private var chordSlots = intArrayOf(1, 8, 3, 17, 22, 24)
+
         private var currentPattern = 0
         private var bpm = 100
         private var stringDelayMs = 13
@@ -83,7 +90,7 @@ class MainActivity : AppCompatActivity() {
             NativeAudioEngine.setStringDelayMs(stringDelayMs)
             NativeAudioEngine.setMasterVolume(masterVolume / 100f)
             NativeAudioEngine.setPattern(currentPattern)
-            NativeAudioEngine.setChord(chordIdForName(currentChord))
+            NativeAudioEngine.setChord(currentChordId)
         } else {
             txtBank.text = "Banco: 118 MF + 17 Palm Mute · sesión activa"
         }
@@ -457,41 +464,7 @@ class MainActivity : AppCompatActivity() {
             NativeAudioEngine.manualStrumUp()
         }
 
-        findViewById<Button>(
-            R.id.btnOpen
-        ).setOnClickListener {
-            selectChord("OPEN", 0)
-        }
-
-        findViewById<Button>(
-            R.id.btnEm
-        ).setOnClickListener {
-            selectChord("Em", 1)
-        }
-
-        findViewById<Button>(
-            R.id.btnC
-        ).setOnClickListener {
-            selectChord("C", 2)
-        }
-
-        findViewById<Button>(
-            R.id.btnG
-        ).setOnClickListener {
-            selectChord("G", 3)
-        }
-
-        findViewById<Button>(
-            R.id.btnD
-        ).setOnClickListener {
-            selectChord("D", 4)
-        }
-
-        findViewById<Button>(
-            R.id.btnBm
-        ).setOnClickListener {
-            selectChord("Bm", 5)
-        }
+        bindChordSlots()
 
         findViewById<Button>(
             R.id.btnPatternMenu
@@ -614,19 +587,135 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun selectChord(
-        name: String,
-        id: Int
+    private data class ChordOption(
+        val id: Int,
+        val name: String
+    )
+
+    private val chordOptions = listOf(
+        ChordOption(0, "OPEN"),
+
+        ChordOption(1, "C"),
+        ChordOption(2, "C#"),
+        ChordOption(3, "D"),
+        ChordOption(4, "D#"),
+        ChordOption(5, "E"),
+        ChordOption(6, "F"),
+        ChordOption(7, "F#"),
+        ChordOption(8, "G"),
+        ChordOption(9, "G#"),
+        ChordOption(10, "A"),
+        ChordOption(11, "A#"),
+        ChordOption(12, "B"),
+
+        ChordOption(13, "Cm"),
+        ChordOption(14, "C#m"),
+        ChordOption(15, "Dm"),
+        ChordOption(16, "D#m"),
+        ChordOption(17, "Em"),
+        ChordOption(18, "Fm"),
+        ChordOption(19, "F#m"),
+        ChordOption(20, "Gm"),
+        ChordOption(21, "G#m"),
+        ChordOption(22, "Am"),
+        ChordOption(23, "A#m"),
+        ChordOption(24, "Bm"),
+
+        ChordOption(25, "C7"),
+        ChordOption(26, "C#7"),
+        ChordOption(27, "D7"),
+        ChordOption(28, "D#7"),
+        ChordOption(29, "E7"),
+        ChordOption(30, "F7"),
+        ChordOption(31, "F#7"),
+        ChordOption(32, "G7"),
+        ChordOption(33, "G#7"),
+        ChordOption(34, "A7"),
+        ChordOption(35, "A#7"),
+        ChordOption(36, "B7")
+    )
+
+    private val chordButtonIds = intArrayOf(
+        R.id.btnChord1,
+        R.id.btnChord2,
+        R.id.btnChord3,
+        R.id.btnChord4,
+        R.id.btnChord5,
+        R.id.btnChord6
+    )
+
+    private fun bindChordSlots() {
+        chordButtonIds.forEachIndexed { slot, buttonId ->
+            val button = findViewById<Button>(buttonId)
+
+            button.setOnClickListener {
+                selectChordById(chordSlots[slot])
+            }
+
+            button.setOnLongClickListener {
+                showChordAssignmentMenu(button, slot)
+                true
+            }
+        }
+
+        updateChordSlotLabels()
+    }
+
+    private fun showChordAssignmentMenu(
+        anchor: Button,
+        slot: Int
     ) {
-        if (
-            currentChord == name &&
-            name != "OPEN"
-        ) {
+        val popup = PopupMenu(this, anchor)
+
+        popup.menu.add(0, 0, 0, "OPEN")
+
+        val majorMenu = popup.menu.addSubMenu("Mayores")
+        val minorMenu = popup.menu.addSubMenu("Menores")
+        val seventhMenu = popup.menu.addSubMenu("Séptimas")
+
+        chordOptions.filter { it.id in 1..12 }.forEach {
+            majorMenu.add(0, it.id, it.id, it.name)
+        }
+
+        chordOptions.filter { it.id in 13..24 }.forEach {
+            minorMenu.add(0, it.id, it.id, it.name)
+        }
+
+        chordOptions.filter { it.id in 25..36 }.forEach {
+            seventhMenu.add(0, it.id, it.id, it.name)
+        }
+
+        popup.setOnMenuItemClickListener { item ->
+            val chosen = chordOptions.firstOrNull { it.id == item.itemId }
+                ?: return@setOnMenuItemClickListener false
+
+            chordSlots[slot] = chosen.id
+            updateChordSlotLabels()
+            true
+        }
+
+        popup.show()
+    }
+
+    private fun updateChordSlotLabels() {
+        chordButtonIds.forEachIndexed { slot, buttonId ->
+            val chord = chordOptions.first { it.id == chordSlots[slot] }
+            findViewById<Button>(buttonId).text = chord.name
+        }
+    }
+
+    private fun selectChordById(id: Int) {
+        val selected = chordOptions.firstOrNull { it.id == id }
+            ?: chordOptions.first()
+
+        if (currentChordId == selected.id && selected.id != 0) {
+            currentChordId = 0
             currentChord = "OPEN"
             NativeAudioEngine.setChord(0)
         } else {
-            currentChord = name
-            NativeAudioEngine.setChord(id)
+            currentChordId = selected.id
+            currentChord = selected.name
+            NativeAudioEngine.setChord(selected.id)
         }
 
         updateUi()
@@ -727,15 +816,6 @@ class MainActivity : AppCompatActivity() {
             } else {
                 "▶ PLAY"
             }
-    }
-
-    private fun chordIdForName(name: String): Int = when (name) {
-        "Em" -> 1
-        "C" -> 2
-        "G" -> 3
-        "D" -> 4
-        "Bm" -> 5
-        else -> 0
     }
 
     override fun onDestroy() {
