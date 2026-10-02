@@ -14,6 +14,7 @@ public:
     static constexpr int kStringCount = 6;
     static constexpr int kMaxFrets = 20;
     static constexpr int kChordCount = 37; // OPEN + 12 mayores + 12 menores + 12 séptimas
+    static constexpr int kMaxCustomEvents = 128;
 
     enum Layer {
         MF = 0,
@@ -24,10 +25,18 @@ public:
     // se intersecta con la forma real del acorde (fret < 0 = cuerda muteada).
     enum StringTarget {
         ALL_ALLOWED = 0,
-        BASS_3,      // cuerdas físicas 6,5,4
-        TREBLE_3,    // cuerdas físicas 3,2,1
-        TREBLE_4,    // cuerdas físicas 4,3,2,1
-        ROOT_BASS    // una sola cuerda: bajo raíz explícito del acorde
+        BASS_3,
+        TREBLE_3,
+        TREBLE_4,
+        ROOT_BASS
+    };
+
+    enum CustomEventType {
+        EVENT_STRUM_DOWN = 0,
+        EVENT_STRUM_UP = 1,
+        EVENT_ROOT_BASS = 2,
+        EVENT_ALT_BASS = 3,
+        EVENT_PLUCK_STRING = 4
     };
 
     bool open();
@@ -45,6 +54,20 @@ public:
     void setStringDelayMs(int delayMs);
     void setPattern(int pattern);
     void setMasterVolume(float volume);
+
+    bool setCustomPattern(
+        int ticksPerBar,
+        const int* ticks,
+        const int* offsetsMs,
+        const int* types,
+        const int* targets,
+        const int* layers,
+        const int* stringNumbers,
+        const float* velocities,
+        const float* spreadsMs,
+        const int* humanizeFlags,
+        int count);
+    void clearCustomPattern();
 
     void manualStrumDown();
     void manualStrumUp();
@@ -76,12 +99,22 @@ private:
     // -1 = cuerda muteada.
     struct Chord {
         std::array<int, 6> fret;
-
         int rootBassString;
         int rootBassFret;
-
         int altBassString;
         int altBassFret;
+    };
+
+    struct CustomRhythmEvent {
+        int tick = 0;
+        int offsetMs = 0;
+        int type = EVENT_STRUM_DOWN;
+        StringTarget target = ALL_ALLOWED;
+        int layer = MF;
+        int stringNumber = 1;
+        float velocity = 0.8f;
+        float spreadMs = 13.0f;
+        bool humanize = false;
     };
 
     void resetTransport();
@@ -149,6 +182,7 @@ private:
     void triggerRootBass(int64_t startFrame, float velocity = 1.0f);
     void triggerAltBass(int64_t startFrame, float velocity = 1.0f);
     void triggerPatternEvent(int tick, int64_t tickFrame);
+    void triggerCustomPatternEvent(int tick, int64_t tickFrame);
 
     void startVoice(int sampleIndex, int physicalString,
                     int64_t startFrame, float gain);
@@ -177,6 +211,11 @@ private:
     std::atomic<int> mStringDelayMs{13};
     std::atomic<int> mPattern{0};
     std::atomic<float> mMasterVolume{0.85f};
+
+    std::array<CustomRhythmEvent, kMaxCustomEvents> mCustomEvents{};
+    std::atomic<int> mCustomEventCount{0};
+    std::atomic<int> mCustomTicksPerBar{16};
+    std::atomic<bool> mCustomPatternActive{false};
 
     std::atomic<bool> mPendingManualDown{false};
     std::atomic<bool> mPendingManualUp{false};
