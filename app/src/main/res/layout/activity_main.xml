@@ -1,0 +1,361 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:background="#111318">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="GuitarPilot · Oboe · MF"
+            android:textColor="#FFFFFF"
+            android:textSize="26sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:paddingBottom="4dp" />
+
+        <TextView
+            android:id="@+id/txtBank"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Banco: cargando..."
+            android:textColor="#C7CAD1"
+            android:textSize="14sp"
+            android:gravity="center"
+            android:paddingBottom="8dp" />
+
+        <TextView
+            android:id="@+id/txtChord"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="OPEN"
+            android:textColor="#FFFFFF"
+            android:textSize="44sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:padding="10dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btnPlayPause"
+                android:layout_width="0dp"
+                android:layout_height="64dp"
+                android:layout_weight="2"
+                android:text="▶ PLAY"
+                android:textSize="18sp" />
+
+            <Button
+                android:id="@+id/btnStop"
+                android:layout_width="0dp"
+                android:layout_height="64dp"
+                android:layout_weight="1"
+                android:text="■ STOP"
+                android:textSize="16sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="8dp">
+
+            <Button
+                android:id="@+id/btnStrumDown"
+                android:layout_width="0dp"
+                android:layout_height="60dp"
+                android:layout_weight="1"
+                android:text="↓ RASGUEO" />
+
+            <Button
+                android:id="@+id/btnStrumUp"
+                android:layout_width="0dp"
+                android:layout_height="60dp"
+                android:layout_weight="1"
+                android:text="↑ RASGUEO" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="10dp">
+
+            <Button
+                android:id="@+id/btnOpen"
+                android:layout_width="0dp"
+                android:layout_height="64dp"
+                android:layout_weight="1"
+                android:text="OPEN" />
+
+            <Button
+                android:id="@+id/btnEm"
+                android:layout_width="0dp"
+                android:layout_height="64dp"
+                android:layout_weight="1"
+                android:text="Em" />
+
+            <Button
+                android:id="@+id/btnC"
+                android:layout_width="0dp"
+                android:layout_height="64dp"
+                android:layout_weight="1"
+                android:text="C" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btnG"
+                android:layout_width="0dp"
+                android:layout_height="64dp"
+                android:layout_weight="1"
+                android:text="G" />
+
+            <Button
+                android:id="@+id/btnD"
+                android:layout_width="0dp"
+                android:layout_height="64dp"
+                android:layout_weight="1"
+                android:text="D" />
+
+            <Button
+                android:id="@+id/btnBm"
+                android:layout_width="0dp"
+                android:layout_height="64dp"
+                android:layout_weight="1"
+                android:text="Bm" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Ritmo"
+            android:textColor="#FFFFFF"
+            android:textSize="17sp"
+            android:paddingTop="16dp"
+            android:paddingBottom="6dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btnPatternPopRock"
+                android:layout_width="0dp"
+                android:layout_height="58dp"
+                android:layout_weight="1"
+                android:text="POP/ROCK" />
+
+            <Button
+                android:id="@+id/btnPatternBallad"
+                android:layout_width="0dp"
+                android:layout_height="58dp"
+                android:layout_weight="1"
+                android:text="BALADA" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btnPatternArpeggio"
+                android:layout_width="0dp"
+                android:layout_height="58dp"
+                android:layout_weight="1"
+                android:text="PIMAMI" />
+
+            <Button
+                android:id="@+id/btnPatternRockMuted"
+                android:layout_width="0dp"
+                android:layout_height="58dp"
+                android:layout_weight="1"
+                android:text="ROCK MUTED" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btnPatternGoldenStrum"
+                android:layout_width="0dp"
+                android:layout_height="58dp"
+                android:layout_weight="1"
+                android:text="GOLDEN 01" />
+
+            <Button
+                android:id="@+id/btnPatternGoldenFolk"
+                android:layout_width="0dp"
+                android:layout_height="58dp"
+                android:layout_weight="1"
+                android:text="GOLDEN 02" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btnPatternCbFolk20"
+                android:layout_width="0dp"
+                android:layout_height="58dp"
+                android:layout_weight="1"
+                android:text="CB FOLK 20" />
+
+            <Button
+                android:id="@+id/btnPatternCbFolk13"
+                android:layout_width="0dp"
+                android:layout_height="58dp"
+                android:layout_weight="1"
+                android:text="CB FOLK 13" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btnPatternCbBallad20"
+                android:layout_width="0dp"
+                android:layout_height="58dp"
+                android:layout_weight="1"
+                android:text="CB BALLAD 20" />
+
+            <Button
+                android:id="@+id/btnPatternCbBallad13"
+                android:layout_width="0dp"
+                android:layout_height="58dp"
+                android:layout_weight="1"
+                android:text="CB BALLAD 13" />
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/btnPatternStringZones"
+            android:layout_width="match_parent"
+            android:layout_height="58dp"
+            android:text="ZONAS · GRAVES / AGUDAS" />
+
+        <TextView
+            android:id="@+id/txtPattern"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Pop/Rock · MF"
+            android:textColor="#C7CAD1"
+            android:textSize="16sp"
+            android:gravity="center"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Tempo"
+            android:textColor="#FFFFFF"
+            android:textSize="17sp"
+            android:paddingTop="10dp"
+            android:paddingBottom="6dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btnBpmMinus"
+                android:layout_width="64dp"
+                android:layout_height="56dp"
+                android:text="−" />
+
+            <TextView
+                android:id="@+id/txtBpm"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="100 BPM"
+                android:textColor="#FFFFFF"
+                android:textSize="22sp"
+                android:gravity="center" />
+
+            <Button
+                android:id="@+id/btnBpmPlus"
+                android:layout_width="64dp"
+                android:layout_height="56dp"
+                android:text="+" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/txtVolume"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Volumen master: 85%"
+            android:textColor="#FFFFFF"
+            android:textSize="17sp"
+            android:paddingTop="14dp"
+            android:paddingBottom="4dp" />
+
+        <SeekBar
+            android:id="@+id/seekVolume"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="100"
+            android:progress="85" />
+
+        <TextView
+            android:id="@+id/txtDelay"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Separación entre cuerdas: 13 ms"
+            android:textColor="#FFFFFF"
+            android:textSize="17sp"
+            android:paddingTop="12dp"
+            android:paddingBottom="4dp" />
+
+        <SeekBar
+            android:id="@+id/seekDelay"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="35"
+            android:progress="3" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="MF principal · A/B spread: ako + ChordBox · Palm Mute MicRos"
+            android:textColor="#C7CAD1"
+            android:textSize="14sp"
+            android:gravity="center"
+            android:paddingTop="14dp"
+            android:paddingBottom="4dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Una vibración principal por cuerda · fade 5 ms"
+            android:textColor="#C7CAD1"
+            android:textSize="14sp"
+            android:gravity="center"
+            android:paddingBottom="16dp" />
+
+    </LinearLayout>
+</ScrollView>
