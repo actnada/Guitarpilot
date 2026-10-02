@@ -490,3 +490,42 @@ Referencia de prueba: acompañamiento asociado a "Hojas Secas".
 - la dirección de los agudos alterna empezando DOWN:
   `DOWN / UP / DOWN / UP...`;
 - la alternancia de dirección afecta solo a los agudos.
+
+
+# v0.12 — Biblioteca de acordes + seis accesos configurables
+
+La pantalla conserva seis botones de acorde visibles, pero dejan de estar
+fijados a seis acordes concretos.
+
+## Interacción
+
+- toque corto sobre un botón: selecciona/toca el acorde asignado;
+- segundo toque sobre el acorde actualmente activo: vuelve a OPEN;
+- mantener pulsado un botón: abre el selector para reasignar ese botón;
+- las seis asignaciones sobreviven a rotaciones/recreaciones mientras el
+  proceso de la app siga activo.
+
+Valores iniciales:
+`C · G · D · Em · Am · Bm`.
+
+## Biblioteca inicial
+
+Se añadieron 37 estados de acorde:
+
+- OPEN;
+- 12 mayores: C, C#, D, D#, E, F, F#, G, G#, A, A#, B;
+- 12 menores: Cm, C#m, Dm, D#m, Em, Fm, F#m, Gm, G#m, Am, A#m, Bm;
+- 12 séptimas dominantes: C7, C#7, D7, D#7, E7, F7, F#7, G7, G#7, A7, A#7, B7.
+
+El selector temporal usa submenús `Mayores / Menores / Séptimas`. La estética
+del selector no se considera definitiva; en esta etapa importa validar la
+funcionalidad y las digitaciones.
+
+## Digitaciones
+
+El motor usa posiciones abiertas o cejillas comunes, siempre como seis valores
+ordenados de cuerda 6 a cuerda 1. Cada acorde conserva además bajo raíz y bajo
+alternativo para los patrones que los necesiten.
+
+Todos los trastes utilizados por esta biblioteca quedan dentro del rango del
+banco MF de Iowa ya cargado.
