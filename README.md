@@ -210,3 +210,183 @@ una prueba dedicada del bajo.
 3. Escuchar si desaparece parte de la repetición mecánica.
 4. Prestar atención especial a C en los eventos de zona grave y ROOT_BASS.
 5. Confirmar que cambiar de acorde no reinicia el transporte.
+
+
+# Pendientes de audio y articulaciones — recursos faltantes
+
+Esta sección documenta mejoras confirmadas por la investigación de bancos SFZ
+que **no conviene implementar todavía** porque GuitarPilot no dispone aún de
+los recursos de audio necesarios. El objetivo es preservar la arquitectura y
+retomar estas ideas cuando exista presupuesto, nuevos bancos compatibles o
+grabaciones propias.
+
+## 1. Round robin real por nota y articulación
+
+Los bancos estudiados usan varias tomas diferentes de una misma nota para
+evitar la repetición mecánica. Ejemplos observados incluyen secuencias de 3,
+4, 8 y hasta 16 posiciones.
+
+Estado actual de GuitarPilot:
+- Iowa aporta capas `pp`, `mf` y `ff`, pero son **niveles de intensidad**,
+  no variantes equivalentes de round robin.
+- No se deben alternar `pp/mf/ff` como si fueran tomas diferentes de la misma
+  intensidad.
+
+Recurso necesario:
+- 2–4 grabaciones por cuerda/traste/articulación y por capa dinámica, idealmente
+  con el mismo instrumento, posición de micrófono y cadena de grabación.
+
+Arquitectura futura prevista:
+
+```text
+SampleSlot
+├─ stringId
+├─ fret
+├─ articulation
+├─ velocityLayer
+└─ variants[]
+```
+
+## 2. Ataques DOWN y UP con timbre propio
+
+Unreal separa articulaciones de ataque descendente y ascendente. GuitarPilot
+actualmente puede invertir el orden físico de las cuerdas, pero usa el mismo
+tipo de muestra para ambos sentidos.
+
+Recurso necesario:
+- muestras separadas de púa DOWN y UP para sustain y, si es posible, mute.
+
+Mientras no existan esas tomas:
+- mantener la diferencia por dirección mediante orden de cuerdas, zona,
+  dinámica, spread y humanización;
+- no simular falsamente un timbre UP/DOWN distinto si el material fuente no lo
+  contiene.
+
+## 3. Palm mute coherente con guitarra nylon
+
+El Palm Mute actual cumple bien la función rítmica, pero su timbre corresponde
+a una guitarra de carácter más metálico que el banco principal de nylon.
+
+Recurso necesario:
+- palm mute grabado con una guitarra de nylon o una fuente con timbre compatible
+  con el banco principal.
+
+Hasta entonces:
+- conservar el Palm Mute actual como recurso experimental;
+- no expandir masivamente esa articulación hasta encontrar una fuente tímbrica
+  más consistente.
+
+## 4. Release samples y Stop Noise
+
+Los bancos SFZ estudiados disparan capas específicas al soltar una nota,
+cambiar de cuerda o realizar un choke. Esas capas incluyen round robin,
+`offset`, `offset_random`, variación de amplitud y `trigger=release`.
+
+Estado actual:
+- GuitarPilot usa release/fade por voz, suficiente para evitar cortes duros.
+- No existen todavía samples de release propios.
+
+Recurso necesario:
+- release noise por cuerda o por familia de cuerdas;
+- stop noise / choke;
+- varias variantes para evitar efecto de repetición.
+
+Arquitectura futura:
+```text
+NOTE ON
+→ voz principal
+
+NOTE OFF / cambio / choke
+→ release layer opcional
+```
+
+## 5. Fret noise, pick noise, pick scratch y ruidos mecánicos
+
+Los instrumentos estudiados tratan estos sonidos como capas independientes y,
+en varios casos, con múltiples variantes.
+
+Recurso necesario:
+- fret noise;
+- pick noise;
+- pick scratch;
+- ruido de cambio de posición;
+- stop noise;
+- body/percussive noise.
+
+Uso futuro:
+- disparo probabilístico o contextual;
+- intensidad baja;
+- nunca en todos los eventos;
+- posibilidad de desactivar estas capas.
+
+## 6. Ghost strum / brush / dead note
+
+Para un acompañamiento convincente hacen falta golpes que no sean acordes
+completos ni palm mute. Algunas bibliotecas usan articulaciones específicas de
+`Brush`, dead notes y golpes rítmicos cortos.
+
+Recurso necesario:
+- varias tomas de brush/ghost;
+- dead strum / CHAK;
+- preferentemente grabadas con la misma guitarra del banco principal.
+
+Mientras tanto:
+- `TREBLE_3`, `TREBLE_4`, gate corto y menor velocity pueden aproximar el
+  gesto, pero no sustituyen una grabación real.
+
+## 7. Capas dinámicas Iowa pp / mf / ff
+
+Esto **sí se puede implementar más adelante con recursos ya disponibles**,
+pero requiere integrar y validar las tres capas completas.
+
+Modelo previsto:
+```text
+velocity baja  → pp
+velocity media → mf
+velocity alta  → ff
+```
+
+Dentro de cada capa seguirá habiendo una sola variante mientras no exista
+round robin real.
+
+Antes de activarlo:
+- verificar que las tres capas estén completas y correctamente nombradas;
+- normalizar diferencias extremas de nivel sin destruir el carácter de cada
+  capa;
+- medir memoria y tiempo de carga en Android.
+
+## 8. Legato, slide, bend y articulaciones paramétricas
+
+Unreal demuestra que algunas articulaciones pueden reutilizar una muestra base
+cambiando `offset`, attack, release, pitch envelope y otros parámetros.
+
+Parte de esta idea puede prototiparse sin nuevas grabaciones, pero no debe
+confundirse con una articulación real.
+
+Pendiente experimental:
+- `LEGATO_SIM` con offset + attack suave;
+- release variable;
+- slide/bend sintético únicamente como laboratorio.
+
+Criterio:
+- si el efecto resulta artificial, se conserva solo como referencia técnica y
+  se espera a disponer de muestras específicas.
+
+## 9. Banco propio futuro
+
+Objetivo a largo plazo cuando el proyecto genere ingresos o consiga apoyo:
+
+- guitarra nylon principal;
+- mismas cuerdas y digitaciones que usa el motor;
+- `pp / mf / ff`;
+- 2–4 round robins por capa;
+- DOWN / UP;
+- palm mute;
+- dead/ghost strum;
+- release/stop noise;
+- fret noise;
+- body hits;
+- grabación consistente de principio a fin.
+
+Esta biblioteca permitiría aprovechar completamente la arquitectura que ya se
+está preparando en GuitarPilot sin volver a diseñar el motor.
