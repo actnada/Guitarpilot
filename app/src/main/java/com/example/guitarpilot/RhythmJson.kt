@@ -54,7 +54,7 @@ object RhythmJsonCodec {
 
         val schemaVersion = root.optInt("schemaVersion", 1)
         require(schemaVersion == 1) {
-            "schemaVersion no soportado: \$schemaVersion"
+            "schemaVersion no soportado: $schemaVersion"
         }
 
         val ticksPerBar = root.optInt("ticksPerBar", 16)
@@ -79,42 +79,42 @@ object RhythmJsonCodec {
 
             val type = e.getString("type").uppercase()
             require(type in validTypes) {
-                "Evento \${i + 1}: type inválido: \$type"
+                "Evento ${i + 1}: type inválido: $type"
             }
 
             val target = e.optString("target", "ALL_ALLOWED").uppercase()
             require(target in validTargets) {
-                "Evento \${i + 1}: target inválido: \$target"
+                "Evento ${i + 1}: target inválido: $target"
             }
 
             val tick = e.getInt("tick")
             require(tick in 0 until ticksPerBar) {
-                "Evento \${i + 1}: tick fuera de rango"
+                "Evento ${i + 1}: tick fuera de rango"
             }
 
             val offsetMs = e.optInt("offsetMs", 0)
             require(offsetMs in -100..100) {
-                "Evento \${i + 1}: offsetMs debe estar entre -100 y 100"
+                "Evento ${i + 1}: offsetMs debe estar entre -100 y 100"
             }
 
             val velocity = e.optDouble("velocity", 0.8).toFloat()
             require(velocity in 0f..1f) {
-                "Evento \${i + 1}: velocity debe estar entre 0 y 1"
+                "Evento ${i + 1}: velocity debe estar entre 0 y 1"
             }
 
             val spreadMs = e.optDouble("spreadMs", 13.0).toFloat()
             require(spreadMs in 0f..60f) {
-                "Evento \${i + 1}: spreadMs debe estar entre 0 y 60"
+                "Evento ${i + 1}: spreadMs debe estar entre 0 y 60"
             }
 
             val layer = e.optString("layer", "MF").uppercase()
             require(layer == "MF" || layer == "PALM_MUTE") {
-                "Evento \${i + 1}: layer debe ser MF o PALM_MUTE"
+                "Evento ${i + 1}: layer debe ser MF o PALM_MUTE"
             }
 
             val stringNumber = e.optInt("stringNumber", 1)
             require(stringNumber in 1..6) {
-                "Evento \${i + 1}: stringNumber debe estar entre 1 y 6"
+                "Evento ${i + 1}: stringNumber debe estar entre 1 y 6"
             }
 
             events += RhythmEventDef(
@@ -196,7 +196,7 @@ object RhythmJsonCodec {
                 "ROOT_BASS" -> 2
                 "ALT_BASS" -> 3
                 "PLUCK_STRING" -> 4
-                else -> error("Tipo no soportado: \${event.type}")
+                else -> error("Tipo no soportado: ${event.type}")
             }
 
             targets[i] = when (event.target) {
