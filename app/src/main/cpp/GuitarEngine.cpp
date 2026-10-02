@@ -95,7 +95,7 @@ void GuitarEngine::stop() {
 
 void GuitarEngine::setChord(int chord) {
     // El hilo de audio aplicará el cambio y decidirá qué cuerdas deben apagarse.
-    mChord.store(std::clamp(chord, 0, 5));
+    mChord.store(std::clamp(chord, 0, kChordCount - 1));
 }
 
 void GuitarEngine::setBpm(int bpm) {
@@ -296,7 +296,7 @@ void GuitarEngine::releaseString(int physicalString, int fadeMs) {
 }
 
 void GuitarEngine::applyPendingChordChange() {
-    const int requestedChord = std::clamp(mChord.load(), 0, 5);
+    const int requestedChord = std::clamp(mChord.load(), 0, kChordCount - 1);
 
     if (requestedChord == mAppliedChord) return;
 
@@ -359,7 +359,7 @@ void GuitarEngine::triggerStrumWithDelay(
     int64_t delayFrames) {
 
     const auto& chord =
-        mChords[std::clamp(mAppliedChord, 0, 5)].fret;
+        mChords[std::clamp(mAppliedChord, 0, kChordCount - 1)].fret;
 
     struct Hit {
         int physicalString;
@@ -410,7 +410,7 @@ void GuitarEngine::triggerChordBoxReferenceStrum(
     bool totalSpread) {
 
     const auto& chord =
-        mChords[std::clamp(mAppliedChord, 0, 5)].fret;
+        mChords[std::clamp(mAppliedChord, 0, kChordCount - 1)].fret;
 
     struct Hit {
         int physicalString;
@@ -471,7 +471,7 @@ void GuitarEngine::triggerTargetStrum(
     double totalSpreadMs) {
 
     const auto& chord =
-        mChords[std::clamp(mAppliedChord, 0, 5)];
+        mChords[std::clamp(mAppliedChord, 0, kChordCount - 1)];
 
     // ROOT_BASS no es una zona aproximada: resuelve directamente la
     // cuerda/traste raíz declarada por el acorde. Para C es SIEMPRE
@@ -582,7 +582,7 @@ void GuitarEngine::triggerHumanizedTargetStrum(
     double baseTotalSpreadMs) {
 
     const auto& chord =
-        mChords[std::clamp(mAppliedChord, 0, 5)];
+        mChords[std::clamp(mAppliedChord, 0, kChordCount - 1)];
 
     // El scheduler musical conserva el tick exacto. La interpretación
     // recibe una ventana local de 0..6 ms (centro 3 ms, jitter +/-3 ms).
@@ -692,7 +692,7 @@ void GuitarEngine::triggerChordWithoutRootBass(
     int preferredLayer) {
 
     const auto& chord =
-        mChords[std::clamp(mAppliedChord, 0, 5)];
+        mChords[std::clamp(mAppliedChord, 0, kChordCount - 1)];
 
     // Golden Folk de backing-tracks:
     // en 2 y 4 dispara simultáneamente las notas superiores,
@@ -744,7 +744,7 @@ void GuitarEngine::triggerChordString(
     if (physicalString < 1 || physicalString > 6) return;
 
     const auto& chord =
-        mChords[std::clamp(mAppliedChord, 0, 5)].fret;
+        mChords[std::clamp(mAppliedChord, 0, kChordCount - 1)].fret;
 
     const int chordPos = 6 - physicalString;
     const int fret = chord[chordPos];
@@ -764,7 +764,7 @@ void GuitarEngine::triggerRootBass(
     float velocity) {
 
     const auto& chord =
-        mChords[std::clamp(mAppliedChord, 0, 5)];
+        mChords[std::clamp(mAppliedChord, 0, kChordCount - 1)];
 
     triggerPluckString(
         chord.rootBassString,
@@ -779,7 +779,7 @@ void GuitarEngine::triggerAltBass(
     float velocity) {
 
     const auto& chord =
-        mChords[std::clamp(mAppliedChord, 0, 5)];
+        mChords[std::clamp(mAppliedChord, 0, kChordCount - 1)];
 
     triggerPluckString(
         chord.altBassString,
