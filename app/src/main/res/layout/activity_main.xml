@@ -85,32 +85,48 @@
                 android:text="↑ RASGUEO" />
         </LinearLayout>
 
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Acordes rápidos"
+            android:textColor="#FFFFFF"
+            android:textSize="17sp"
+            android:paddingTop="12dp"
+            android:paddingBottom="4dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Toque = tocar · Mantenga pulsado = cambiar acorde"
+            android:textColor="#C7CAD1"
+            android:textSize="13sp"
+            android:paddingBottom="6dp" />
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginTop="10dp">
+            android:orientation="horizontal">
 
             <Button
-                android:id="@+id/btnOpen"
-                android:layout_width="0dp"
-                android:layout_height="64dp"
-                android:layout_weight="1"
-                android:text="OPEN" />
-
-            <Button
-                android:id="@+id/btnEm"
-                android:layout_width="0dp"
-                android:layout_height="64dp"
-                android:layout_weight="1"
-                android:text="Em" />
-
-            <Button
-                android:id="@+id/btnC"
+                android:id="@+id/btnChord1"
                 android:layout_width="0dp"
                 android:layout_height="64dp"
                 android:layout_weight="1"
                 android:text="C" />
+
+            <Button
+                android:id="@+id/btnChord2"
+                android:layout_width="0dp"
+                android:layout_height="64dp"
+                android:layout_weight="1"
+                android:text="G" />
+
+            <Button
+                android:id="@+id/btnChord3"
+                android:layout_width="0dp"
+                android:layout_height="64dp"
+                android:layout_weight="1"
+                android:text="D" />
         </LinearLayout>
 
         <LinearLayout
@@ -119,21 +135,21 @@
             android:orientation="horizontal">
 
             <Button
-                android:id="@+id/btnG"
+                android:id="@+id/btnChord4"
                 android:layout_width="0dp"
                 android:layout_height="64dp"
                 android:layout_weight="1"
-                android:text="G" />
+                android:text="Em" />
 
             <Button
-                android:id="@+id/btnD"
+                android:id="@+id/btnChord5"
                 android:layout_width="0dp"
                 android:layout_height="64dp"
                 android:layout_weight="1"
-                android:text="D" />
+                android:text="Am" />
 
             <Button
-                android:id="@+id/btnBm"
+                android:id="@+id/btnChord6"
                 android:layout_width="0dp"
                 android:layout_height="64dp"
                 android:layout_weight="1"
