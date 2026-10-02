@@ -255,6 +255,12 @@
             android:layout_height="58dp"
             android:text="ZONAS · GRAVES / AGUDAS" />
 
+        <Button
+            android:id="@+id/btnPatternStringZonesHuman"
+            android:layout_width="match_parent"
+            android:layout_height="58dp"
+            android:text="ZONAS HUMAN · A/B HUMANIZACIÓN" />
+
         <TextView
             android:id="@+id/txtPattern"
             android:layout_width="match_parent"
