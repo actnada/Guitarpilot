@@ -107,7 +107,7 @@ void GuitarEngine::setStringDelayMs(int ms) {
 }
 
 void GuitarEngine::setPattern(int pattern) {
-    const int value = std::clamp(pattern, 0, 11);
+    const int value = std::clamp(pattern, 0, 13);
     mPattern.store(value);
 
     // Para esta etapa de prototipo reiniciamos la fase del patrón al cambiar
@@ -953,6 +953,96 @@ void GuitarEngine::triggerPatternEvent(
                 break;
             case 14:
                 triggerHumanizedTargetStrum(true, tickFrame, 0.80f, ALL_ALLOWED, MF, 20.0);
+                break;
+            default:
+                break;
+        }
+    } else if (pattern == 12) {
+        // ROCK PULSE 01 — referencia verbal: "BON CHA-CA BON CHA-CA".
+        // Idea física:
+        // - BON = bajo raíz con peso.
+        // - CHA-CA = respuesta rápida en las 3 cuerdas agudas.
+        // El reloj sigue en semicorcheas; la humanización solo afecta
+        // al gesto, nunca desplaza el transporte.
+        switch (tick) {
+            case 0:
+                triggerHumanizedTargetStrum(
+                    true, tickFrame, 0.86f, ROOT_BASS, MF, 0.0);
+                break;
+            case 3:
+                triggerHumanizedTargetStrum(
+                    false, tickFrame, 0.50f, TREBLE_3, MF, 10.0);
+                break;
+            case 4:
+                triggerHumanizedTargetStrum(
+                    true, tickFrame, 0.70f, TREBLE_3, MF, 12.0);
+                break;
+            case 8:
+                triggerHumanizedTargetStrum(
+                    true, tickFrame, 0.84f, ROOT_BASS, MF, 0.0);
+                break;
+            case 11:
+                triggerHumanizedTargetStrum(
+                    false, tickFrame, 0.48f, TREBLE_3, MF, 10.0);
+                break;
+            case 12:
+                triggerHumanizedTargetStrum(
+                    true, tickFrame, 0.72f, TREBLE_3, MF, 12.0);
+                break;
+            default:
+                break;
+        }
+    } else if (pattern == 13) {
+        // BALLAD PULSE 01 — referencia verbal:
+        // "NO  NO  ahora no  ahora no".
+        //
+        // Los dos "NO" son bajos separados. En "ahora no" desaparecen
+        // las cuerdas 5 y 6: el gesto llega como máximo a la cuerda 4.
+        // Cada frase aguda alterna UP/DOWN y se comprime respecto a los bajos.
+        switch (tick) {
+            case 0:
+                triggerHumanizedTargetStrum(
+                    true, tickFrame, 0.84f, ROOT_BASS, MF, 0.0);
+                break;
+            case 4:
+                triggerHumanizedTargetStrum(
+                    true, tickFrame, 0.78f, ROOT_BASS, MF, 0.0);
+                break;
+
+            // "a-ho-ra-no" 1
+            case 6:
+                triggerHumanizedTargetStrum(
+                    false, tickFrame, 0.46f, TREBLE_4, MF, 10.0);
+                break;
+            case 7:
+                triggerHumanizedTargetStrum(
+                    true, tickFrame, 0.62f, TREBLE_4, MF, 12.0);
+                break;
+            case 8:
+                triggerHumanizedTargetStrum(
+                    false, tickFrame, 0.48f, TREBLE_4, MF, 10.0);
+                break;
+            case 9:
+                triggerHumanizedTargetStrum(
+                    true, tickFrame, 0.66f, TREBLE_4, MF, 12.0);
+                break;
+
+            // "a-ho-ra-no" 2
+            case 12:
+                triggerHumanizedTargetStrum(
+                    false, tickFrame, 0.46f, TREBLE_4, MF, 10.0);
+                break;
+            case 13:
+                triggerHumanizedTargetStrum(
+                    true, tickFrame, 0.60f, TREBLE_4, MF, 12.0);
+                break;
+            case 14:
+                triggerHumanizedTargetStrum(
+                    false, tickFrame, 0.48f, TREBLE_4, MF, 10.0);
+                break;
+            case 15:
+                triggerHumanizedTargetStrum(
+                    true, tickFrame, 0.68f, TREBLE_4, MF, 12.0);
                 break;
             default:
                 break;
