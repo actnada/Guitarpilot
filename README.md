@@ -390,3 +390,53 @@ Objetivo a largo plazo cuando el proyecto genere ingresos o consiga apoyo:
 
 Esta biblioteca permitiría aprovechar completamente la arquitectura que ya se
 está preparando en GuitarPilot sin volver a diseñar el motor.
+
+
+# v0.11 — Rhythm menu + pulse experiments
+
+Antes de esta versión, v0.10 Humanization Lab fue promovida a `main` como
+primera base estable probada en dispositivo.
+
+## Interfaz de ritmos
+
+Se conserva todo el catálogo existente, pero la pantalla deja de mostrar un
+botón por cada patrón.
+
+Nueva UI:
+- `ELEGIR RITMO ▼`: abre un menú con todos los patrones.
+- acceso rápido 1: `ZONAS HUMAN`.
+- acceso rápido 2: `PIMAMI`.
+
+Los accesos rápidos son provisionales y podrán hacerse configurables.
+
+## ROCK PULSE 01
+
+Referencia verbal de diseño: `BON CHA-CA BON CHA-CA`.
+
+Estructura física:
+- `BON`: bajo raíz.
+- `CHA-CA`: dos rasgueos rápidos en `TREBLE_3`.
+- se usa la capa de humanización de v0.10.
+- BPM inicial de prueba: 100.
+
+La intención es construir un patrón rock genérico de bajo + respuesta aguda,
+no reproducir un arreglo específico de una canción.
+
+## BALLAD PULSE 01
+
+Referencia verbal: `NO  NO  ahora no  ahora no`.
+
+Estructura:
+- dos bajos separados al inicio;
+- durante ambos `ahora no` se omiten las cuerdas 5 y 6;
+- los rasgueos llegan como máximo a cuerda 4 mediante `TREBLE_4`;
+- cada frase aguda alterna UP/DOWN;
+- BPM inicial de prueba: 90.
+
+La frase verbal se conserva en documentación porque ayuda a relacionar la
+sensación rítmica con la implementación técnica.
+
+## Estado de ramas
+
+- `main`: v0.10 Humanization Lab, probada y promovida.
+- `testing`: v0.11 y siguientes experimentos.
