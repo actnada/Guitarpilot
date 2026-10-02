@@ -559,6 +559,12 @@ class MainActivity : AppCompatActivity() {
         }
 
         findViewById<Button>(
+            R.id.btnPatternStringZonesHuman
+        ).setOnClickListener {
+            selectPattern(11)
+        }
+
+        findViewById<Button>(
             R.id.btnBpmMinus
         ).setOnClickListener {
 
@@ -691,6 +697,7 @@ class MainActivity : AppCompatActivity() {
             6, 7 -> bpm = 100 // ChordBox Folk A/B
             8, 9 -> bpm = 90  // ChordBox Pop Ballad A/B
             10 -> bpm = 100   // prueba de zonas físicas
+            11 -> bpm = 100   // mismo patrón con humanización controlada
         }
 
         NativeAudioEngine.setBpm(bpm)
@@ -710,7 +717,9 @@ class MainActivity : AppCompatActivity() {
             7 -> "CB FOLK B · 13 ms POR CUERDA"
             8 -> "CB BALLAD A · 20 ms TOTAL"
             9 -> "CB BALLAD B · 13 ms POR CUERDA"
-            else -> "ZONAS · bajos/agudas/acorde completo"
+            10 -> "ZONAS · referencia limpia"
+            11 -> "ZONAS HUMAN · microtiming + dinámica"
+            else -> "Patrón experimental"
         }
     }
 
