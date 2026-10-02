@@ -149,117 +149,33 @@
             android:paddingTop="16dp"
             android:paddingBottom="6dp" />
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
-
-            <Button
-                android:id="@+id/btnPatternPopRock"
-                android:layout_width="0dp"
-                android:layout_height="58dp"
-                android:layout_weight="1"
-                android:text="POP/ROCK" />
-
-            <Button
-                android:id="@+id/btnPatternBallad"
-                android:layout_width="0dp"
-                android:layout_height="58dp"
-                android:layout_weight="1"
-                android:text="BALADA" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
-
-            <Button
-                android:id="@+id/btnPatternArpeggio"
-                android:layout_width="0dp"
-                android:layout_height="58dp"
-                android:layout_weight="1"
-                android:text="PIMAMI" />
-
-            <Button
-                android:id="@+id/btnPatternRockMuted"
-                android:layout_width="0dp"
-                android:layout_height="58dp"
-                android:layout_weight="1"
-                android:text="ROCK MUTED" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
-
-            <Button
-                android:id="@+id/btnPatternGoldenStrum"
-                android:layout_width="0dp"
-                android:layout_height="58dp"
-                android:layout_weight="1"
-                android:text="GOLDEN 01" />
-
-            <Button
-                android:id="@+id/btnPatternGoldenFolk"
-                android:layout_width="0dp"
-                android:layout_height="58dp"
-                android:layout_weight="1"
-                android:text="GOLDEN 02" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
-
-            <Button
-                android:id="@+id/btnPatternCbFolk20"
-                android:layout_width="0dp"
-                android:layout_height="58dp"
-                android:layout_weight="1"
-                android:text="CB FOLK 20" />
-
-            <Button
-                android:id="@+id/btnPatternCbFolk13"
-                android:layout_width="0dp"
-                android:layout_height="58dp"
-                android:layout_weight="1"
-                android:text="CB FOLK 13" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
-
-            <Button
-                android:id="@+id/btnPatternCbBallad20"
-                android:layout_width="0dp"
-                android:layout_height="58dp"
-                android:layout_weight="1"
-                android:text="CB BALLAD 20" />
-
-            <Button
-                android:id="@+id/btnPatternCbBallad13"
-                android:layout_width="0dp"
-                android:layout_height="58dp"
-                android:layout_weight="1"
-                android:text="CB BALLAD 13" />
-        </LinearLayout>
-
         <Button
-            android:id="@+id/btnPatternStringZones"
+            android:id="@+id/btnPatternMenu"
             android:layout_width="match_parent"
-            android:layout_height="58dp"
-            android:text="ZONAS · GRAVES / AGUDAS" />
+            android:layout_height="60dp"
+            android:text="ELEGIR RITMO ▼"
+            android:textSize="17sp" />
 
-        <Button
-            android:id="@+id/btnPatternStringZonesHuman"
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="58dp"
-            android:text="ZONAS HUMAN · A/B HUMANIZACIÓN" />
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="6dp">
+
+            <Button
+                android:id="@+id/btnQuickPattern1"
+                android:layout_width="0dp"
+                android:layout_height="58dp"
+                android:layout_weight="1"
+                android:text="★ ZONAS HUMAN" />
+
+            <Button
+                android:id="@+id/btnQuickPattern2"
+                android:layout_width="0dp"
+                android:layout_height="58dp"
+                android:layout_weight="1"
+                android:text="★ PIMAMI" />
+        </LinearLayout>
 
         <TextView
             android:id="@+id/txtPattern"
