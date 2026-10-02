@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:background="#111318">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Editor de ritmo JSON"
+            android:textColor="#FFFFFF"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:paddingBottom="8dp" />
+
+        <TextView
+            android:id="@+id/txtEditorStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Edita, aplica y prueba sin recompilar."
+            android:textColor="#C7CAD1"
+            android:textSize="14sp"
+            android:paddingBottom="8dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btnImportJson"
+                android:layout_width="0dp"
+                android:layout_height="56dp"
+                android:layout_weight="1"
+                android:text="IMPORTAR" />
+
+            <Button
+                android:id="@+id/btnExportJson"
+                android:layout_width="0dp"
+                android:layout_height="56dp"
+                android:layout_weight="1"
+                android:text="EXPORTAR" />
+        </LinearLayout>
+
+        <EditText
+            android:id="@+id/editRhythmJson"
+            android:layout_width="match_parent"
+            android:layout_height="320dp"
+            android:layout_marginTop="8dp"
+            android:background="#1B1E24"
+            android:gravity="top|start"
+            android:inputType="textMultiLine|textNoSuggestions"
+            android:fontFamily="monospace"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#777A82"
+            android:textSize="13sp"
+            android:padding="10dp"
+            android:scrollbars="vertical"
+            android:overScrollMode="always" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="8dp">
+
+            <Button
+                android:id="@+id/btnApplyJson"
+                android:layout_width="0dp"
+                android:layout_height="58dp"
+                android:layout_weight="1"
+                android:text="APLICAR" />
+
+            <Button
+                android:id="@+id/btnEditorTest"
+                android:layout_width="0dp"
+                android:layout_height="58dp"
+                android:layout_weight="1"
+                android:text="▶ PROBAR" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/txtSelectedEvent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Evento"
+            android:textColor="#FFFFFF"
+            android:textSize="15sp"
+            android:paddingTop="14dp"
+            android:paddingBottom="6dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btnEventPrev"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_weight="1"
+                android:text="← EVENTO" />
+
+            <Button
+                android:id="@+id/btnEventNext"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_weight="1"
+                android:text="EVENTO →" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Microtiming del evento seleccionado"
+            android:textColor="#C7CAD1"
+            android:textSize="14sp"
+            android:paddingTop="12dp"
+            android:paddingBottom="4dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btnOffsetMinus10"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_weight="1"
+                android:text="-10" />
+
+            <Button
+                android:id="@+id/btnOffsetMinus2"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_weight="1"
+                android:text="-2" />
+
+            <Button
+                android:id="@+id/btnOffsetPlus2"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_weight="1"
+                android:text="+2" />
+
+            <Button
+                android:id="@+id/btnOffsetPlus10"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_weight="1"
+                android:text="+10" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="offsetMs admite -100…+100 ms. El reloj principal no se desplaza; solo se mueve ese evento."
+            android:textColor="#C7CAD1"
+            android:textSize="13sp"
+            android:paddingTop="8dp"
+            android:paddingBottom="20dp" />
+
+    </LinearLayout>
+</ScrollView>
