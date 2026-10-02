@@ -172,6 +172,14 @@
             android:text="ELEGIR RITMO ▼"
             android:textSize="17sp" />
 
+        <Button
+            android:id="@+id/btnRhythmEditor"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="6dp"
+            android:text="EDITOR / IMPORTAR JSON"
+            android:textSize="15sp" />
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
