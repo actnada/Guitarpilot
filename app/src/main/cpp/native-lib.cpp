@@ -140,3 +140,82 @@ Java_com_example_guitarpilot_NativeAudioEngine_manualStrumUp(
 
     if (gEngine) gEngine->manualStrumUp();
 }
+
+
+extern "C" JNIEXPORT jboolean JNICALL
+Java_com_example_guitarpilot_NativeAudioEngine_setCustomPattern(
+    JNIEnv* env,
+    jobject,
+    jint ticksPerBar,
+    jintArray ticks,
+    jintArray offsetsMs,
+    jintArray types,
+    jintArray targets,
+    jintArray layers,
+    jintArray stringNumbers,
+    jfloatArray velocities,
+    jfloatArray spreadsMs,
+    jintArray humanizeFlags) {
+
+    if (!gEngine || !ticks || !offsetsMs || !types || !targets || !layers ||
+        !stringNumbers || !velocities || !spreadsMs || !humanizeFlags) {
+        return JNI_FALSE;
+    }
+
+    const jsize count = env->GetArrayLength(ticks);
+    if (count <= 0 || count > GuitarEngine::kMaxCustomEvents) {
+        return JNI_FALSE;
+    }
+
+    if (env->GetArrayLength(offsetsMs) != count ||
+        env->GetArrayLength(types) != count ||
+        env->GetArrayLength(targets) != count ||
+        env->GetArrayLength(layers) != count ||
+        env->GetArrayLength(stringNumbers) != count ||
+        env->GetArrayLength(velocities) != count ||
+        env->GetArrayLength(spreadsMs) != count ||
+        env->GetArrayLength(humanizeFlags) != count) {
+        return JNI_FALSE;
+    }
+
+    jint* pTicks = env->GetIntArrayElements(ticks, nullptr);
+    jint* pOffsets = env->GetIntArrayElements(offsetsMs, nullptr);
+    jint* pTypes = env->GetIntArrayElements(types, nullptr);
+    jint* pTargets = env->GetIntArrayElements(targets, nullptr);
+    jint* pLayers = env->GetIntArrayElements(layers, nullptr);
+    jint* pStrings = env->GetIntArrayElements(stringNumbers, nullptr);
+    jfloat* pVelocities = env->GetFloatArrayElements(velocities, nullptr);
+    jfloat* pSpreads = env->GetFloatArrayElements(spreadsMs, nullptr);
+    jint* pHumanize = env->GetIntArrayElements(humanizeFlags, nullptr);
+
+    const bool ok = gEngine->setCustomPattern(
+        ticksPerBar,
+        reinterpret_cast<int*>(pTicks),
+        reinterpret_cast<int*>(pOffsets),
+        reinterpret_cast<int*>(pTypes),
+        reinterpret_cast<int*>(pTargets),
+        reinterpret_cast<int*>(pLayers),
+        reinterpret_cast<int*>(pStrings),
+        reinterpret_cast<float*>(pVelocities),
+        reinterpret_cast<float*>(pSpreads),
+        reinterpret_cast<int*>(pHumanize),
+        count);
+
+    env->ReleaseIntArrayElements(ticks, pTicks, JNI_ABORT);
+    env->ReleaseIntArrayElements(offsetsMs, pOffsets, JNI_ABORT);
+    env->ReleaseIntArrayElements(types, pTypes, JNI_ABORT);
+    env->ReleaseIntArrayElements(targets, pTargets, JNI_ABORT);
+    env->ReleaseIntArrayElements(layers, pLayers, JNI_ABORT);
+    env->ReleaseIntArrayElements(stringNumbers, pStrings, JNI_ABORT);
+    env->ReleaseFloatArrayElements(velocities, pVelocities, JNI_ABORT);
+    env->ReleaseFloatArrayElements(spreadsMs, pSpreads, JNI_ABORT);
+    env->ReleaseIntArrayElements(humanizeFlags, pHumanize, JNI_ABORT);
+
+    return ok ? JNI_TRUE : JNI_FALSE;
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_example_guitarpilot_NativeAudioEngine_clearCustomPattern(
+    JNIEnv*, jobject) {
+    if (gEngine) gEngine->clearCustomPattern();
+}
