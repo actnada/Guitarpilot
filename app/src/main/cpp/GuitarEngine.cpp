@@ -966,47 +966,44 @@ void GuitarEngine::triggerPatternEvent(
                 break;
         }
     } else if (pattern == 12) {
-        // ROCK PULSE 01 — referencia verbal: "BON CHA-CA BON CHA-CA".
-        // Idea física:
-        // - BON = bajo raíz con peso.
-        // - CHA-CA = respuesta rápida en las 3 cuerdas agudas.
-        // El reloj sigue en semicorcheas; la humanización solo afecta
-        // al gesto, nunca desplaza el transporte.
+        // ROCK PULSE 01 — nueva lectura física:
+        // AGUDAS UP -> AGUDAS DOWN -> BAJO -> pequeña espera.
+        // El gesto agudo usa SOLO cuerdas 3,2,1.
+        // Después del bajo queda una semicorchea de aire y el ciclo repite.
         switch (tick) {
             case 0:
-                triggerHumanizedTargetStrum(
-                    true, tickFrame, 0.86f, ROOT_BASS, MF, 0.0);
-                break;
-            case 3:
+            case 4:
+            case 8:
+            case 12:
                 triggerHumanizedTargetStrum(
                     false, tickFrame, 0.50f, TREBLE_3, MF, 10.0);
                 break;
-            case 4:
+
+            case 1:
+            case 5:
+            case 9:
+            case 13:
                 triggerHumanizedTargetStrum(
-                    true, tickFrame, 0.70f, TREBLE_3, MF, 12.0);
+                    true, tickFrame, 0.68f, TREBLE_3, MF, 12.0);
                 break;
-            case 8:
+
+            case 2:
+            case 6:
+            case 10:
+            case 14:
                 triggerHumanizedTargetStrum(
                     true, tickFrame, 0.84f, ROOT_BASS, MF, 0.0);
                 break;
-            case 11:
-                triggerHumanizedTargetStrum(
-                    false, tickFrame, 0.48f, TREBLE_3, MF, 10.0);
-                break;
-            case 12:
-                triggerHumanizedTargetStrum(
-                    true, tickFrame, 0.72f, TREBLE_3, MF, 12.0);
-                break;
+
+            // 3,7,11,15 = pequeña espera.
             default:
                 break;
         }
     } else if (pattern == 13) {
-        // BALLAD PULSE 01 — referencia verbal:
-        // "NO  NO  ahora no  ahora no".
-        //
-        // Los dos "NO" son bajos separados. En "ahora no" desaparecen
-        // las cuerdas 5 y 6: el gesto llega como máximo a la cuerda 4.
-        // Cada frase aguda alterna UP/DOWN y se comprime respecto a los bajos.
+        // LATIN BALLAD 01 — referencia de prueba: "Hojas Secas".
+        // Los bajos se conservan separados. SOLO los golpes agudos alternan
+        // dirección y nunca bajan de la cuerda 4:
+        // DOWN -> UP -> DOWN -> UP...
         switch (tick) {
             case 0:
                 triggerHumanizedTargetStrum(
@@ -1017,40 +1014,40 @@ void GuitarEngine::triggerPatternEvent(
                     true, tickFrame, 0.78f, ROOT_BASS, MF, 0.0);
                 break;
 
-            // "a-ho-ra-no" 1
+            // Frase aguda 1: empieza DOWN y alterna.
             case 6:
-                triggerHumanizedTargetStrum(
-                    false, tickFrame, 0.46f, TREBLE_4, MF, 10.0);
-                break;
-            case 7:
                 triggerHumanizedTargetStrum(
                     true, tickFrame, 0.62f, TREBLE_4, MF, 12.0);
                 break;
-            case 8:
+            case 7:
                 triggerHumanizedTargetStrum(
                     false, tickFrame, 0.48f, TREBLE_4, MF, 10.0);
                 break;
-            case 9:
+            case 8:
                 triggerHumanizedTargetStrum(
                     true, tickFrame, 0.66f, TREBLE_4, MF, 12.0);
                 break;
-
-            // "a-ho-ra-no" 2
-            case 12:
+            case 9:
                 triggerHumanizedTargetStrum(
-                    false, tickFrame, 0.46f, TREBLE_4, MF, 10.0);
+                    false, tickFrame, 0.50f, TREBLE_4, MF, 10.0);
                 break;
-            case 13:
+
+            // Frase aguda 2: mantiene la alternancia DOWN/UP.
+            case 12:
                 triggerHumanizedTargetStrum(
                     true, tickFrame, 0.60f, TREBLE_4, MF, 12.0);
                 break;
+            case 13:
+                triggerHumanizedTargetStrum(
+                    false, tickFrame, 0.46f, TREBLE_4, MF, 10.0);
+                break;
             case 14:
                 triggerHumanizedTargetStrum(
-                    false, tickFrame, 0.48f, TREBLE_4, MF, 10.0);
+                    true, tickFrame, 0.68f, TREBLE_4, MF, 12.0);
                 break;
             case 15:
                 triggerHumanizedTargetStrum(
-                    true, tickFrame, 0.68f, TREBLE_4, MF, 12.0);
+                    false, tickFrame, 0.50f, TREBLE_4, MF, 10.0);
                 break;
             default:
                 break;
