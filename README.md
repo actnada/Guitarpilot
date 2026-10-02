@@ -542,3 +542,81 @@ Importante:
 - lo único bloqueado durante PLAY es la **reasignación de los seis accesos
   rápidos**;
 - para reasignar un botón hay que pausar o detener la reproducción.
+
+
+# v0.13 — Ritmos JSON editables en tiempo de ejecución
+
+La rama testing incorpora la primera versión del motor de ritmos externos.
+
+## Objetivo
+
+Crear, importar, ajustar, escuchar y exportar un ritmo sin recompilar la APK.
+
+Flujo:
+```text
+JSON
+→ importar / editar
+→ APLICAR
+→ PROBAR
+→ ajustar offset de eventos
+→ PROBAR otra vez
+→ EXPORTAR
+```
+
+## Formato JSON v1
+
+Campos principales:
+- `schemaVersion`
+- `id`
+- `name`
+- `category`
+- `defaultBpm`
+- `timeSignature`
+- `ticksPerBar`
+- `events[]`
+
+Eventos soportados inicialmente:
+- `STRUM_DOWN`
+- `STRUM_UP`
+- `ROOT_BASS`
+- `ALT_BASS`
+- `PLUCK_STRING`
+
+Targets:
+- `ALL_ALLOWED`
+- `BASS_3`
+- `TREBLE_3`
+- `TREBLE_4`
+- `ROOT_BASS`
+
+Cada evento puede definir:
+- `tick`
+- `offsetMs` entre -100 y +100 ms
+- `velocity`
+- `spreadMs`
+- `layer` = MF o PALM_MUTE
+- `humanize`
+- `stringNumber` para PLUCK_STRING
+
+## Editor inicial
+
+La pantalla principal añade `EDITOR / IMPORTAR JSON`.
+
+El editor permite:
+- importar un archivo JSON mediante el selector de Android;
+- exportarlo;
+- aplicar el JSON al motor;
+- probarlo inmediatamente;
+- recorrer eventos;
+- mover el evento seleccionado -10, -2, +2 o +10 ms;
+- volver a reproducir sin recompilar.
+
+Como semilla se incluye `assets/rhythms/zonas_human.json`, una versión en
+datos del patrón Zonas Human.
+
+## Nota de arquitectura
+
+Los ritmos heredados siguen presentes en C++ durante la transición. Elegir uno
+de ellos desactiva el patrón JSON activo. El objetivo posterior es migrarlos
+gradualmente al formato JSON una vez validemos que el runtime reproduce
+correctamente los patrones.
