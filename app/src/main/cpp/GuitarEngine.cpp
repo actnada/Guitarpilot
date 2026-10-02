@@ -108,11 +108,67 @@ void GuitarEngine::setStringDelayMs(int ms) {
 
 void GuitarEngine::setPattern(int pattern) {
     const int value = std::clamp(pattern, 0, 13);
+    mCustomPatternActive.store(false);
     mPattern.store(value);
 
-    // Para esta etapa de prototipo reiniciamos la fase del patrón al cambiar
-    // de estilo. Cambiar ACORDE no reinicia el transporte; cambiar de RITMO sí
-    // comienza el nuevo patrón desde su primer evento.
+    mTickIndex = 0;
+    mNextTickFrame = mFrameCounter + 1;
+}
+
+bool GuitarEngine::setCustomPattern(
+    int ticksPerBar,
+    const int* ticks,
+    const int* offsetsMs,
+    const int* types,
+    const int* targets,
+    const int* layers,
+    const int* stringNumbers,
+    const float* velocities,
+    const float* spreadsMs,
+    const int* humanizeFlags,
+    int count) {
+
+    if (!ticks || !offsetsMs || !types || !targets || !layers ||
+        !stringNumbers || !velocities || !spreadsMs || !humanizeFlags) {
+        return false;
+    }
+
+    if (ticksPerBar < 1 || ticksPerBar > 64) return false;
+    if (count < 1 || count > kMaxCustomEvents) return false;
+
+    mCustomPatternActive.store(false);
+    mCustomEventCount.store(0);
+
+    for (int i = 0; i < count; ++i) {
+        CustomRhythmEvent event;
+        event.tick = std::clamp(ticks[i], 0, ticksPerBar - 1);
+        event.offsetMs = std::clamp(offsetsMs[i], -100, 100);
+        event.type = std::clamp(types[i],
+            static_cast<int>(EVENT_STRUM_DOWN),
+            static_cast<int>(EVENT_PLUCK_STRING));
+        event.target = static_cast<StringTarget>(
+            std::clamp(targets[i],
+                static_cast<int>(ALL_ALLOWED),
+                static_cast<int>(ROOT_BASS)));
+        event.layer = (layers[i] == PALM_MUTE) ? PALM_MUTE : MF;
+        event.stringNumber = std::clamp(stringNumbers[i], 1, 6);
+        event.velocity = std::clamp(velocities[i], 0.0f, 1.0f);
+        event.spreadMs = std::clamp(spreadsMs[i], 0.0f, 60.0f);
+        event.humanize = humanizeFlags[i] != 0;
+        mCustomEvents[i] = event;
+    }
+
+    mCustomTicksPerBar.store(ticksPerBar);
+    mCustomEventCount.store(count);
+    mTickIndex = 0;
+    mNextTickFrame = mFrameCounter + 1;
+    mCustomPatternActive.store(true);
+    return true;
+}
+
+void GuitarEngine::clearCustomPattern() {
+    mCustomPatternActive.store(false);
+    mCustomEventCount.store(0);
     mTickIndex = 0;
     mNextTickFrame = mFrameCounter + 1;
 }
@@ -789,6 +845,86 @@ void GuitarEngine::triggerAltBass(
         MF);
 }
 
+void GuitarEngine::triggerCustomPatternEvent(
+    int tick,
+    int64_t tickFrame) {
+
+    const int count = std::clamp(
+        mCustomEventCount.load(), 0, kMaxCustomEvents);
+    const int ticksPerBar = std::clamp(
+        mCustomTicksPerBar.load(), 1, 64);
+    const int64_t oneTickFrames = framesPerSixteenth();
+
+    for (int i = 0; i < count; ++i) {
+        const auto& event = mCustomEvents[i];
+
+        int dispatchTick = event.tick;
+        if (event.offsetMs < 0) {
+            dispatchTick = (event.tick - 1 + ticksPerBar) % ticksPerBar;
+        }
+
+        if (dispatchTick != tick) continue;
+
+        const int64_t offsetFrames = static_cast<int64_t>(
+            std::llround(
+                (static_cast<double>(event.offsetMs) / 1000.0) *
+                mOutputSampleRate));
+
+        int64_t eventFrame = tickFrame + offsetFrames;
+        if (event.offsetMs < 0) {
+            eventFrame = tickFrame + oneTickFrames + offsetFrames;
+        }
+
+        eventFrame = std::max<int64_t>(mFrameCounter, eventFrame);
+
+        switch (event.type) {
+            case EVENT_STRUM_DOWN:
+            case EVENT_STRUM_UP: {
+                const bool down = event.type == EVENT_STRUM_DOWN;
+                if (event.humanize) {
+                    triggerHumanizedTargetStrum(
+                        down, eventFrame, event.velocity,
+                        event.target, event.layer, event.spreadMs);
+                } else {
+                    triggerTargetStrum(
+                        down, eventFrame, event.velocity,
+                        event.target, event.layer, event.spreadMs);
+                }
+                break;
+            }
+
+            case EVENT_ROOT_BASS: {
+                const auto& chord =
+                    mChords[std::clamp(
+                        mAppliedChord, 0, kChordCount - 1)];
+                triggerPluckString(
+                    chord.rootBassString, chord.rootBassFret,
+                    eventFrame, event.velocity, event.layer);
+                break;
+            }
+
+            case EVENT_ALT_BASS: {
+                const auto& chord =
+                    mChords[std::clamp(
+                        mAppliedChord, 0, kChordCount - 1)];
+                triggerPluckString(
+                    chord.altBassString, chord.altBassFret,
+                    eventFrame, event.velocity, event.layer);
+                break;
+            }
+
+            case EVENT_PLUCK_STRING:
+                triggerChordString(
+                    event.stringNumber, eventFrame,
+                    event.velocity, event.layer);
+                break;
+
+            default:
+                break;
+        }
+    }
+}
+
 void GuitarEngine::triggerPatternEvent(
     int tick,
     int64_t tickFrame) {
@@ -1193,7 +1329,9 @@ oboe::DataCallbackResult GuitarEngine::onAudioReady(
         // Todos los patrones excepto PIMAMI cambian acorde inmediatamente.
         // PIMAMI: el acorde nuevo espera hasta tick 0 del siguiente ciclo,
         // de modo que siempre entra empezando por el pulgar/bajo.
-        if (mPattern.load() != 2 || !mPlaying.load()) {
+        const bool customPattern = mCustomPatternActive.load();
+
+        if (customPattern || mPattern.load() != 2 || !mPlaying.load()) {
             applyPendingChordChange();
         }
 
@@ -1210,7 +1348,7 @@ oboe::DataCallbackResult GuitarEngine::onAudioReady(
         if (mPlaying.load()) {
             while (mFrameCounter >= mNextTickFrame) {
 
-                if (mPattern.load() == 2) {
+                if (!customPattern && mPattern.load() == 2) {
                     // PIMAMI tiene un reloj propio.
                     // El acorde pendiente solo se aplica antes del P.
                     if (mTickIndex == 0) {
@@ -1227,9 +1365,20 @@ oboe::DataCallbackResult GuitarEngine::onAudioReady(
                     mNextTickFrame +=
                         framesForPimamiGap(completedStep);
 
+                } else if (customPattern) {
+                    triggerCustomPatternEvent(
+                        mTickIndex,
+                        mNextTickFrame);
+
+                    const int customTicks = std::clamp(
+                        mCustomTicksPerBar.load(), 1, 64);
+
+                    mTickIndex =
+                        (mTickIndex + 1) % customTicks;
+
+                    mNextTickFrame +=
+                        framesPerSixteenth();
                 } else {
-                    // Rasgueos, Rock Muted y Golden Rhythms usan
-                    // una cuadrícula base de semicorcheas.
                     triggerPatternEvent(
                         mTickIndex,
                         mNextTickFrame);
