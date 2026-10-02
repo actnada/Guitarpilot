@@ -120,6 +120,17 @@ private:
                             int preferredLayer = MF,
                             double totalSpreadMs = 20.0);
 
+    // Laboratorio de humanización inspirado en las ideas observadas en
+    // bibliotecas SFZ: variación de micro-timing, spread y ganancia,
+    // sin modificar el reloj principal del patrón.
+    void triggerHumanizedTargetStrum(bool down, int64_t startFrame,
+                                     float velocity, StringTarget target,
+                                     int preferredLayer = MF,
+                                     double baseTotalSpreadMs = 20.0);
+
+    uint32_t nextHumanRandom();
+    float nextHumanUnit();
+
     void triggerChordWithoutRootBass(int64_t startFrame,
                                      float velocity,
                                      int preferredLayer = MF);
@@ -168,6 +179,10 @@ private:
 
     std::atomic<bool> mPendingManualDown{false};
     std::atomic<bool> mPendingManualUp{false};
+
+    // PRNG ligero, usado solo por el hilo de audio para microvariaciones.
+    // No usa std::random ni realiza asignaciones dentro del callback.
+    uint32_t mHumanRngState = 0x6D2B79F5u;
 
     int32_t mOutputSampleRate = 48000;
     int32_t mChannelCount = 2;
