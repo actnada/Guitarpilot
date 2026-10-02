@@ -529,3 +529,16 @@ alternativo para los patrones que los necesiten.
 
 Todos los trastes utilizados por esta biblioteca quedan dentro del rango del
 banco MF de Iowa ya cargado.
+
+
+## v0.12 — bloqueo de reasignación durante reproducción
+
+Mientras el transporte está en PLAY, mantener pulsado un botón de acorde ya
+no permite cambiar qué acorde está asignado a ese botón.
+
+Importante:
+- el toque corto sigue cambiando de acorde durante la reproducción, porque ese
+  es el comportamiento central de GuitarPilot;
+- lo único bloqueado durante PLAY es la **reasignación de los seis accesos
+  rápidos**;
+- para reasignar un botón hay que pausar o detener la reproducción.
