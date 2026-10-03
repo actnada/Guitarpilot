@@ -872,3 +872,86 @@ No adivinar comportamiento musical si puede verificarse con audio real.
 
 El objetivo de GuitarPilot no es demostrar teoría musical perfecta, sino sentirse
 como una guitarra de acompañamiento convincente, inmediata y expresiva.
+
+
+---
+
+# 31. Dirección futura: notación visual → partitura
+
+Objetivo a largo plazo:
+- el editor visual de GuitarPilot debe ser suficientemente simple para usuarios que no leen música;
+- aun así, los datos internos deben conservar suficiente información musical para poder exportarse más adelante a notación estándar.
+
+La interfaz puede seguir usando símbolos simples como:
+- ↓ / ↑ = rasgueos;
+- B = bajo raíz;
+- A = bajo alternativo;
+- ● = punteo;
+- × = golpe apagado;
+- N/F/S en español o N/S/L en inglés para dinámica;
+- R = rasgueo separado / raked strum;
+- PM = palm mute.
+
+La posición horizontal en la tablatura visual representa tiempo. La posición y longitud vertical del gesto representan las cuerdas afectadas. El usuario no necesita conocer ticks, milisegundos ni figuras musicales.
+
+Internamente, NO guardar posiciones en píxeles. Guardar siempre información musical/temporal estructurada.
+
+Campos que conviene conservar o poder derivar:
+- `timeSignature`;
+- `ticksPerBar`;
+- `bars`;
+- `tick`;
+- `offsetMs`;
+- posición dentro del beat;
+- duración o extensión temporal del evento;
+- tipo de gesto;
+- cuerdas afectadas;
+- intensidad/dinámica;
+- articulación;
+- BPM.
+
+Flujo objetivo:
+
+```text
+Editor visual simple
+→ JSON GuitarPilot
+→ motor de audio
+→ exportadores futuros
+   ├─ MIDI
+   └─ MusicXML
+      → pentagrama / tablatura / editor externo
+```
+
+## MusicXML
+
+MusicXML se considera la vía principal futura para exportar una representación que pueda abrirse en programas de notación musical.
+
+No hace falta implementar el pentagrama dentro de GuitarPilot en esta etapa.
+
+La prioridad es que el JSON no pierda información temporal necesaria para que un exportador futuro pueda determinar:
+- en qué beat cae cada evento;
+- si corresponde aproximadamente a negra, corchea, semicorchea, etc.;
+- dirección del rasgueo;
+- dinámica;
+- articulaciones;
+- cuerda o grupo de cuerdas.
+
+Cuando el microtiming no encaje exactamente en una figura estándar, conservar `offsetMs` y decidir durante la exportación si:
+- cuantizar a la figura más cercana;
+- representar una subdivisión más pequeña;
+- o mantener la desviación como información interpretativa.
+
+## Principio de diseño
+
+El usuario debe poder pensar visualmente:
+
+```text
+posición horizontal = cuándo
+posición vertical    = qué cuerdas
+símbolo              = qué gesto
+marcador de dinámica = con qué fuerza
+```
+
+mientras GuitarPilot conserva por debajo datos suficientemente estructurados para traducir el resultado a formatos musicales estándar más adelante.
+
+No diseñar el editor visual alrededor de las limitaciones actuales del JSON si eso cierra la puerta a esta exportación futura. Si es necesario evolucionar el esquema, usar `schemaVersion` para mantener compatibilidad.
