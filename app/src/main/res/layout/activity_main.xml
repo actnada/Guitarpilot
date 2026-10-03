@@ -85,6 +85,14 @@
                 android:text="↑ RASGUEO" />
         </LinearLayout>
 
+        <Button
+            android:id="@+id/btnDiagnosticSample"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:layout_marginTop="6dp"
+            android:text="TEST AUDIO · IOWA E4 100%"
+            android:textSize="14sp" />
+
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
