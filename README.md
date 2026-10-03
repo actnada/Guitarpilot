@@ -620,3 +620,31 @@ Los ritmos heredados siguen presentes en C++ durante la transición. Elegir uno
 de ellos desactiva el patrón JSON activo. El objetivo posterior es migrarlos
 gradualmente al formato JSON una vez validemos que el runtime reproduce
 correctamente los patrones.
+
+
+# Diagnóstico de volumen — Issue #2
+
+Se añadió un botón temporal de diagnóstico:
+
+`TEST AUDIO · IOWA E4 100%`
+
+Condiciones del test:
+- reproduce directamente la muestra Iowa de cuerda 1 al aire (E4), capa MF;
+- gain de voz = 1.0;
+- no usa velocity de ritmo;
+- no usa caída interna por cuerda;
+- no usa humanización;
+- omite el master de GuitarPilot;
+- sí atraviesa el mismo resampler, mixer y stream Oboe que usa la app.
+
+La prueba debe hacerse con el ritmo en pausa.
+
+Interpretación:
+- si este test suena aproximadamente igual de fuerte que reproducir el WAV
+  original en el teléfono, la pérdida de nivel está en la cadena de
+  velocity/falloff/master del acompañamiento;
+- si el test sigue sonando claramente más bajo que el WAV original a igual
+  volumen multimedia, el problema está más abajo: resampler/mixer/ruta Oboe,
+  configuración de uso de audio o procesamiento del dispositivo.
+
+No se modificaron ni normalizaron los WAV.
