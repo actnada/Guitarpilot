@@ -185,6 +185,10 @@ void GuitarEngine::manualStrumUp() {
     mPendingManualUp.store(true);
 }
 
+void GuitarEngine::playDiagnosticSample() {
+    mPendingDiagnosticSample.store(true);
+}
+
 void GuitarEngine::resetTransport() {
     mTickIndex = 0;
     mNextTickFrame =
@@ -1242,7 +1246,8 @@ void GuitarEngine::startVoice(
     int sampleIndex,
     int physicalString,
     int64_t startFrame,
-    float gain) {
+    float gain,
+    bool bypassMaster) {
 
     if (sampleIndex < 0 || sampleIndex >= kSampleCapacity) return;
     if (mSamples[sampleIndex].pcm.empty()) return;
@@ -1278,6 +1283,7 @@ void GuitarEngine::startVoice(
 
     target->startFrame = startFrame;
     target->gain = std::clamp(gain, 0.0f, 1.0f);
+    target->bypassMaster = bypassMaster;
 
     target->releaseFramesTotal = 0;
     target->releaseFramesLeft = 0;
@@ -1355,6 +1361,22 @@ oboe::DataCallbackResult GuitarEngine::onAudioReady(
             triggerStrum(false, mFrameCounter, 0.78f, false, MF);
         }
 
+        // Diagnóstico de ganancia:
+        // reproduce directamente Iowa S1 fret 0 (E4), MF, gain=1.0.
+        // Esta voz NO pasa por velocity de ritmo, falloff, humanización
+        // ni master de GuitarPilot. Solo atraviesa el resampler/mixer Oboe.
+        if (mPendingDiagnosticSample.exchange(false)) {
+            const int sampleIndex = sampleForStringAndFret(1, 0, MF);
+            if (sampleIndex >= 0) {
+                startVoice(
+                    sampleIndex,
+                    1,
+                    mFrameCounter,
+                    1.0f,
+                    true);
+            }
+        }
+
         if (mPlaying.load()) {
             while (mFrameCounter >= mNextTickFrame) {
 
@@ -1402,13 +1424,22 @@ oboe::DataCallbackResult GuitarEngine::onAudioReady(
             }
         }
 
-        float mix = 0.0f;
+        float normalMix = 0.0f;
+        float diagnosticMix = 0.0f;
 
         for (auto& voice : mVoices) {
-            mix += renderVoice(voice);
+            const float rendered = renderVoice(voice);
+
+            if (voice.bypassMaster) {
+                diagnosticMix += rendered;
+            } else {
+                normalMix += rendered;
+            }
         }
 
-        mix *= mMasterVolume.load();
+        float mix =
+            normalMix * mMasterVolume.load() +
+            diagnosticMix;
 
         mix = std::clamp(mix, -1.0f, 1.0f);
 
