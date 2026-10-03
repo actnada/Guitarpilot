@@ -71,6 +71,7 @@ public:
 
     void manualStrumDown();
     void manualStrumUp();
+    void playDiagnosticSample();
 
     oboe::DataCallbackResult onAudioReady(
         oboe::AudioStream*, void*, int32_t) override;
@@ -90,6 +91,7 @@ private:
         double step = 1.0;
         int64_t startFrame = 0;
         float gain = 1.0f;
+        bool bypassMaster = false;
 
         int32_t releaseFramesTotal = 0;
         int32_t releaseFramesLeft = 0;
@@ -185,7 +187,8 @@ private:
     void triggerCustomPatternEvent(int tick, int64_t tickFrame);
 
     void startVoice(int sampleIndex, int physicalString,
-                    int64_t startFrame, float gain);
+                    int64_t startFrame, float gain,
+                    bool bypassMaster = false);
 
     float renderVoice(Voice& voice);
 
@@ -219,6 +222,7 @@ private:
 
     std::atomic<bool> mPendingManualDown{false};
     std::atomic<bool> mPendingManualUp{false};
+    std::atomic<bool> mPendingDiagnosticSample{false};
 
     // PRNG ligero, usado solo por el hilo de audio para microvariaciones.
     // No usa std::random ni realiza asignaciones dentro del callback.
