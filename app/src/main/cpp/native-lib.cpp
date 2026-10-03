@@ -219,3 +219,11 @@ Java_com_example_guitarpilot_NativeAudioEngine_clearCustomPattern(
     JNIEnv*, jobject) {
     if (gEngine) gEngine->clearCustomPattern();
 }
+
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_example_guitarpilot_NativeAudioEngine_playDiagnosticSample(
+    JNIEnv*, jobject) {
+
+    if (gEngine) gEngine->playDiagnosticSample();
+}
