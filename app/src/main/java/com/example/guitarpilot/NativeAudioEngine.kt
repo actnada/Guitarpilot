@@ -43,4 +43,5 @@ object NativeAudioEngine {
 
     external fun manualStrumDown()
     external fun manualStrumUp()
+    external fun playDiagnosticSample()
 }
