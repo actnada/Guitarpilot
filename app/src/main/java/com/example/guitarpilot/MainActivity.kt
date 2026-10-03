@@ -466,6 +466,25 @@ class MainActivity : AppCompatActivity() {
             NativeAudioEngine.manualStrumUp()
         }
 
+        findViewById<Button>(
+            R.id.btnDiagnosticSample
+        ).setOnClickListener {
+            if (isPlaying) {
+                Toast.makeText(
+                    this,
+                    "Pausa el ritmo para comparar la muestra aislada",
+                    Toast.LENGTH_SHORT
+                ).show()
+            } else {
+                NativeAudioEngine.playDiagnosticSample()
+                Toast.makeText(
+                    this,
+                    "TEST: Iowa E4 · gain 1.0 · master bypass",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+
         bindChordSlots()
 
         findViewById<Button>(
