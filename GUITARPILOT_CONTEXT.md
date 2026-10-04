@@ -955,3 +955,110 @@ marcador de dinámica = con qué fuerza
 mientras GuitarPilot conserva por debajo datos suficientemente estructurados para traducir el resultado a formatos musicales estándar más adelante.
 
 No diseñar el editor visual alrededor de las limitaciones actuales del JSON si eso cierra la puerta a esta exportación futura. Si es necesario evolucionar el esquema, usar `schemaVersion` para mantener compatibilidad.
+
+
+---
+
+# 32. Próxima revisión funcional antes del editor visual
+
+Antes de continuar con la especificación grande del editor visual de ritmos,
+hay tres tareas funcionales que deben entrar en la siguiente revisión con
+Work/Codex.
+
+## 32.1 Añadir acordes menores séptima
+
+La biblioteca actual contiene:
+- OPEN;
+- 12 mayores;
+- 12 menores;
+- 12 séptimas dominantes.
+
+Faltan los acordes **menores séptima**, por ejemplo:
+- Cm7
+- C#m7
+- Dm7
+- D#m7
+- Em7
+- Fm7
+- F#m7
+- Gm7
+- G#m7
+- Am7
+- A#m7
+- Bm7
+
+Objetivo:
+- añadir las 12 formas m7 a la biblioteca;
+- revisar digitaciones físicas reales y cuerdas muteadas;
+- definir `rootBassString/rootBassFret`;
+- definir `altBassString/altBassFret` de forma musicalmente útil;
+- añadirlas al selector visual de acordes;
+- conservar compatibilidad con los seis accesos configurables.
+
+No inventar posiciones: verificar digitaciones comunes de guitarra antes de
+implementarlas.
+
+## 32.2 Auditoría de Am en PIMAMI
+
+El acorde Am actual está definido como:
+
+```text
+x02210
+```
+
+y actualmente declara:
+
+```text
+rootBass = cuerda 5, traste 0 = A2
+altBass  = cuerda 4, traste 2 = E3
+```
+
+Esto es coherente con la forma abierta estándar de Am, por lo que si el bajo
+suena incorrecto en PIMAMI no debe asumirse automáticamente que el acorde está
+mal construido.
+
+PIMAMI actualmente abre cada ciclo con:
+
+```text
+triggerRootBass(..., 0.90)
+```
+
+y luego toca cuerdas 3,2,1,2,3.
+
+Revisión requerida:
+- confirmar auditivamente que PIMAMI realmente dispara A2 al usar Am;
+- verificar sample/ruta usada para cuerda 5 al aire;
+- comprobar que no quede una cola grave de un acorde anterior;
+- comprobar cambio pendiente de acorde al inicio del ciclo PIMAMI;
+- comparar Am con otros acordes que usan correctamente ROOT_BASS;
+- verificar si el problema percibido es nota incorrecta, exceso/falta de
+  volumen, timing o resonancia residual.
+
+No cambiar la digitación de Am hasta identificar cuál de estas causas produce
+el problema.
+
+## 32.3 Volumen general demasiado bajo
+
+Síntoma reportado:
+- GuitarPilot suena aproximadamente a la mitad del nivel que normalmente
+  alcanza el teléfono con otras apps/media;
+- los WAV fuente suenan bien fuera de GuitarPilot.
+
+Ya existe el diagnóstico:
+`TEST AUDIO · IOWA E4 100%`.
+
+La próxima revisión debe:
+1. comparar el test aislado con el WAV original a igual volumen multimedia;
+2. medir dónde se pierde nivel;
+3. revisar la suma de `velocity × perStringGain × humanization × master`;
+4. revisar `Usage::Game` frente a `Usage::Media` si el test aislado sigue
+   bajo;
+5. evaluar un aumento moderado del nivel general únicamente después de medir;
+6. evitar clipping y no normalizar los WAV originales;
+7. si se introduce ganancia adicional, dejar margen para rasgueos de varias
+   cuerdas y considerar un limiter seguro solo si las mediciones lo justifican.
+
+Objetivo perceptivo:
+- que GuitarPilot alcance un nivel comparable al de reproducción multimedia
+  normal del teléfono sin sacrificar dinámica ni saturar los rasgueos.
+
