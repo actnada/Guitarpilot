@@ -1062,3 +1062,71 @@ Objetivo perceptivo:
 - que GuitarPilot alcance un nivel comparable al de reproducción multimedia
   normal del teléfono sin sacrificar dinámica ni saturar los rasgueos.
 
+
+
+---
+
+# 33. Referencias auditivas para Am y C
+
+Se proporcionaron grabaciones de referencia para comparar el comportamiento
+real del motor con las notas que deberían sonar en los acordes.
+
+## 33.1 Am
+
+Forma esperada:
+
+```text
+Am = x02210
+6 = mute
+5 = A2
+4 = E3
+3 = A3
+2 = C4
+1 = E4
+```
+
+La grabación de Am confirma el carácter esperado: el bajo principal debe ser
+A2 (quinta cuerda al aire) y la sexta cuerda debe estar completamente ausente.
+
+Si PIMAMI con Am suena extraño, revisar la ruta de `ROOT_BASS`, el sample de
+quinta cuerda al aire, el cambio pendiente de acorde al inicio del ciclo,
+colas residuales y niveles/timing antes de modificar la digitación.
+
+## 33.2 C
+
+Forma esperada:
+
+```text
+C = x32010
+6 = mute
+5 = C3
+4 = E3
+3 = G3
+2 = C4
+1 = E4
+```
+
+En la grabación problemática de C se detectan notas válidas de C (incluyendo
+C3/E3/G3), pero también aparecen ataques graves alrededor de 82 Hz,
+correspondientes a E2 / sexta cuerda al aire.
+
+E2 **no pertenece a la digitación física de C x32010** y la sexta cuerda debe
+estar muteada.
+
+Esto convierte la investigación del bajo extraño de C en un problema concreto:
+determinar cómo puede aparecer o permanecer una voz de sexta cuerda cuando el
+acorde aplicado es C.
+
+Revisar especialmente:
+- si `mAppliedChord` ya es C en el instante del evento;
+- si una voz E2 del acorde anterior sigue activa;
+- si el release de 20 ms al pasar una cuerda a mute funciona realmente;
+- si existen voces futuras ya programadas de la sexta cuerda;
+- si PIMAMI o cualquier scheduler especial usa un acorde anterior durante
+  parte del ciclo;
+- si `ROOT_BASS` en C resuelve siempre cuerda 5 / traste 3;
+- si un evento `BASS_3` respeta la intersección con la máscara del acorde.
+
+No cambiar la forma de C: la digitación `x32010` y su root bass
+(cuerda 5 / traste 3 = C3) son correctos. El objetivo es localizar la fuente
+del E2 no deseado.
