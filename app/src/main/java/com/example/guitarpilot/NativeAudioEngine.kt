@@ -36,6 +36,7 @@ object NativeAudioEngine {
         stringNumbers: IntArray,
         velocities: FloatArray,
         spreadsMs: FloatArray,
+        releaseMs: IntArray,
         humanizeFlags: IntArray
     ): Boolean
 

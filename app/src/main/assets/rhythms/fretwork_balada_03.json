@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "id": "fretwork_balada_03",
+  "name": "Balada 03",
+  "category": "Balada",
+  "defaultBpm": 76,
+  "timeSignature": "4/4",
+  "ticksPerBar": 16,
+  "events": [
+    {
+      "tick": 0,
+      "offsetMs": 0,
+      "type": "STRUM_DOWN",
+      "target": "ALL_ALLOWED",
+      "velocity": 0.85,
+      "spreadMs": 40,
+      "layer": "MF",
+      "humanize": false
+    },
+    {
+      "tick": 6,
+      "offsetMs": 0,
+      "type": "STRUM_UP",
+      "target": "ALL_ALLOWED",
+      "velocity": 0.34,
+      "spreadMs": 24,
+      "layer": "MF",
+      "humanize": false
+    },
+    {
+      "tick": 8,
+      "offsetMs": 0,
+      "type": "STRUM_DOWN",
+      "target": "ALL_ALLOWED",
+      "velocity": 0.595,
+      "spreadMs": 40,
+      "layer": "MF",
+      "humanize": false
+    },
+    {
+      "tick": 14,
+      "offsetMs": 0,
+      "type": "STRUM_UP",
+      "target": "ALL_ALLOWED",
+      "velocity": 0.34,
+      "spreadMs": 24,
+      "layer": "MF",
+      "humanize": false
+    }
+  ]
+}

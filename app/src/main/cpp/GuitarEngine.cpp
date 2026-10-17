@@ -78,19 +78,24 @@ void GuitarEngine::loadSample(
 }
 
 void GuitarEngine::play() {
-    resetTransport();
-    mPlaying.store(true);
+    mControlMailbox.update([](ControlState& state) {
+        state.playing = true;
+        state.reset = TransportReset::Start;
+        ++state.resetVersion;
+    });
 }
 
 void GuitarEngine::pause() {
     // Se detiene el scheduler, no las colas.
-    mPlaying.store(false);
+    mControlMailbox.update([](ControlState& state) { state.playing = false; });
 }
 
 void GuitarEngine::stop() {
-    mPlaying.store(false);
-    mTickIndex = 0;
-    mNextTickFrame = mFrameCounter;
+    mControlMailbox.update([](ControlState& state) {
+        state.playing = false;
+        state.reset = TransportReset::Stop;
+        ++state.resetVersion;
+    });
 }
 
 void GuitarEngine::setChord(int chord) {
@@ -107,12 +112,16 @@ void GuitarEngine::setStringDelayMs(int ms) {
 }
 
 void GuitarEngine::setPattern(int pattern) {
-    const int value = std::clamp(pattern, 0, 13);
-    mCustomPatternActive.store(false);
-    mPattern.store(value);
-
-    mTickIndex = 0;
-    mNextTickFrame = mFrameCounter + 1;
+    // PIMAMI es el único patrón nativo; Balada 02 usa eventos JSON.
+    (void)pattern;
+    const int value = 2;
+    mControlMailbox.update([value](ControlState& state) {
+        state.custom = false;
+        state.pattern = value;
+        ++state.patternVersion;
+        state.reset = TransportReset::Immediate;
+        ++state.resetVersion;
+    });
 }
 
 bool GuitarEngine::setCustomPattern(
@@ -125,52 +134,83 @@ bool GuitarEngine::setCustomPattern(
     const int* stringNumbers,
     const float* velocities,
     const float* spreadsMs,
+    const int* releaseMs,
     const int* humanizeFlags,
     int count) {
 
     if (!ticks || !offsetsMs || !types || !targets || !layers ||
-        !stringNumbers || !velocities || !spreadsMs || !humanizeFlags) {
+        !stringNumbers || !velocities || !spreadsMs || !releaseMs ||
+        !humanizeFlags) {
         return false;
     }
 
     if (ticksPerBar < 1 || ticksPerBar > 64) return false;
     if (count < 1 || count > kMaxCustomEvents) return false;
 
-    mCustomPatternActive.store(false);
-    mCustomEventCount.store(0);
-
-    for (int i = 0; i < count; ++i) {
-        CustomRhythmEvent event;
-        event.tick = std::clamp(ticks[i], 0, ticksPerBar - 1);
-        event.offsetMs = std::clamp(offsetsMs[i], -100, 100);
-        event.type = std::clamp(types[i],
-            static_cast<int>(EVENT_STRUM_DOWN),
-            static_cast<int>(EVENT_PLUCK_STRING));
-        event.target = static_cast<StringTarget>(
-            std::clamp(targets[i],
-                static_cast<int>(ALL_ALLOWED),
-                static_cast<int>(ROOT_BASS)));
-        event.layer = (layers[i] == PALM_MUTE) ? PALM_MUTE : MF;
-        event.stringNumber = std::clamp(stringNumbers[i], 1, 6);
-        event.velocity = std::clamp(velocities[i], 0.0f, 1.0f);
-        event.spreadMs = std::clamp(spreadsMs[i], 0.0f, 60.0f);
-        event.humanize = humanizeFlags[i] != 0;
-        mCustomEvents[i] = event;
-    }
-
-    mCustomTicksPerBar.store(ticksPerBar);
-    mCustomEventCount.store(count);
-    mTickIndex = 0;
-    mNextTickFrame = mFrameCounter + 1;
-    mCustomPatternActive.store(true);
+    mControlMailbox.update([&](ControlState& state) {
+        for (int i = 0; i < count; ++i) {
+            CustomRhythmEvent event;
+            event.tick = std::clamp(ticks[i], 0, ticksPerBar - 1);
+            event.offsetMs = std::clamp(offsetsMs[i], -100, 100);
+            event.type = std::clamp(types[i],
+                static_cast<int>(EVENT_STRUM_DOWN),
+                static_cast<int>(EVENT_RELEASE_TARGET));
+            event.target = static_cast<StringTarget>(
+                std::clamp(targets[i],
+                    static_cast<int>(ALL_ALLOWED),
+                    static_cast<int>(ROOT_BASS)));
+            event.layer = (layers[i] == PALM_MUTE) ? PALM_MUTE : MF;
+            event.stringNumber = std::clamp(stringNumbers[i], 1, 6);
+            event.velocity = std::clamp(velocities[i], 0.0f, 1.0f);
+            event.spreadMs = std::clamp(spreadsMs[i], 0.0f, 60.0f);
+            event.releaseMs = std::clamp(releaseMs[i], 1, 250);
+            event.humanize = humanizeFlags[i] != 0;
+            state.events[i] = event;
+        }
+        state.ticksPerBar = ticksPerBar;
+        state.count = count;
+        state.custom = true;
+        ++state.patternVersion;
+        state.reset = TransportReset::Immediate;
+        ++state.resetVersion;
+    });
     return true;
 }
 
 void GuitarEngine::clearCustomPattern() {
-    mCustomPatternActive.store(false);
-    mCustomEventCount.store(0);
-    mTickIndex = 0;
-    mNextTickFrame = mFrameCounter + 1;
+    mControlMailbox.update([](ControlState& state) {
+        state.custom = false;
+        state.count = 0;
+        ++state.patternVersion;
+        state.reset = TransportReset::Immediate;
+        ++state.resetVersion;
+    });
+}
+
+void GuitarEngine::applyPendingControl() {
+    if (!mControlMailbox.consume(mAudioControl)) return;
+
+    if (mAppliedPatternVersion != mAudioControl.patternVersion) {
+        mCustomEvents = mAudioControl.events;
+        mCustomEventCount.store(mAudioControl.count);
+        mCustomTicksPerBar.store(mAudioControl.ticksPerBar);
+        mCustomPatternActive.store(mAudioControl.custom);
+        mPattern.store(mAudioControl.pattern);
+        mAppliedPatternVersion = mAudioControl.patternVersion;
+    }
+
+    if (mAppliedResetVersion != mAudioControl.resetVersion) {
+        mPendingAttackCount = 0;
+        mPendingReleaseCount = 0;
+        mTickIndex = 0;
+        switch (mAudioControl.reset) {
+            case TransportReset::Start: resetTransport(); break;
+            case TransportReset::Immediate: mNextTickFrame = mFrameCounter + 1; break;
+            case TransportReset::Stop: mNextTickFrame = mFrameCounter; break;
+        }
+        mAppliedResetVersion = mAudioControl.resetVersion;
+    }
+    mPlaying.store(mAudioControl.playing);
 }
 
 void GuitarEngine::setMasterVolume(float volume) {
@@ -223,11 +263,6 @@ int64_t GuitarEngine::framesForMidiTicks(
         0,
         static_cast<int64_t>(
             std::llround(seconds * mOutputSampleRate)));
-}
-
-int GuitarEngine::patternLengthTicks() const {
-    // Cuadrícula base de semicorcheas para los patrones de rasgueo.
-    return 16;
 }
 
 int64_t GuitarEngine::framesForPimamiGap(int stepIndex) const {
@@ -321,38 +356,88 @@ int GuitarEngine::sampleWithFallback(
     return -1;
 }
 
-void GuitarEngine::cancelFutureVoicesOnString(int physicalString) {
-    for (auto& voice : mVoices) {
-        if (!voice.active) continue;
-        if (voice.physicalString != physicalString) continue;
-
-        if (voice.startFrame > mFrameCounter) {
-            voice.active = false;
-        }
-    }
+void GuitarEngine::cancelPendingAttacksOnString(int physicalString) {
+    auto end = std::remove_if(mPendingAttacks.begin(),
+                             mPendingAttacks.begin() + mPendingAttackCount,
+        [physicalString](const PendingAttack& attack) {
+            return attack.physicalString == physicalString;
+        });
+    mPendingAttackCount = static_cast<int>(end - mPendingAttacks.begin());
+    std::make_heap(mPendingAttacks.begin(), end, LaterAttack{});
 }
 
-void GuitarEngine::releaseString(int physicalString, int fadeMs) {
-    cancelFutureVoicesOnString(physicalString);
-
+void GuitarEngine::fadeVoice(Voice& voice, int fadeMs) {
     const int32_t fadeFrames = std::max<int32_t>(
         1,
         static_cast<int32_t>(
             (fadeMs / 1000.0) * mOutputSampleRate));
 
+    // No alargamos una liberación que ya está en curso.
+    if (voice.releaseFramesLeft <= 0 || fadeFrames < voice.releaseFramesLeft) {
+        voice.releaseFramesTotal = fadeFrames;
+        voice.releaseFramesLeft = fadeFrames;
+    }
+}
+
+void GuitarEngine::releaseString(int physicalString, int fadeMs) {
+    cancelPendingAttacksOnString(physicalString);
     for (auto& voice : mVoices) {
         if (!voice.active) continue;
         if (voice.physicalString != physicalString) continue;
-        if (voice.startFrame > mFrameCounter) continue;
-
-        // Si ya está en release, conservamos el más corto.
-        if (voice.releaseFramesLeft <= 0 ||
-            fadeFrames < voice.releaseFramesLeft) {
-
-            voice.releaseFramesTotal = fadeFrames;
-            voice.releaseFramesLeft = fadeFrames;
-        }
+        fadeVoice(voice, fadeMs);
     }
+}
+
+void GuitarEngine::releaseTargetStrings(StringTarget target, int fadeMs) {
+    const auto& chord =
+        mChords[std::clamp(mAppliedChord, 0, kChordCount - 1)];
+
+    if (target == ROOT_BASS) {
+        releaseString(chord.rootBassString, fadeMs);
+        return;
+    }
+
+    for (int chordPos = 0; chordPos < 6; ++chordPos) {
+        const int physicalString = 6 - chordPos;
+        if (chord.fret[chordPos] < 0) continue;
+
+        bool targetAllows = false;
+        switch (target) {
+            case ALL_ALLOWED:
+                targetAllows = true;
+                break;
+            case BASS_3:
+                targetAllows = physicalString >= 4;
+                break;
+            case TREBLE_3:
+                targetAllows = physicalString <= 3;
+                break;
+            case TREBLE_4:
+                targetAllows = physicalString <= 4;
+                break;
+            case ROOT_BASS:
+                break;
+        }
+
+        if (targetAllows) releaseString(physicalString, fadeMs);
+    }
+}
+
+void GuitarEngine::queueTargetRelease(
+    StringTarget target,
+    int fadeMs,
+    int64_t frame) {
+
+    if (mPendingReleaseCount == kMaxCustomEvents) return;
+    mPendingReleases[mPendingReleaseCount++] = {
+        target,
+        std::clamp(fadeMs, 1, 250),
+        std::max(frame, mFrameCounter),
+        mReleaseOrder++};
+    std::push_heap(
+        mPendingReleases.begin(),
+        mPendingReleases.begin() + mPendingReleaseCount,
+        LaterRelease{});
 }
 
 void GuitarEngine::applyPendingChordChange() {
@@ -373,18 +458,11 @@ void GuitarEngine::applyPendingChordChange() {
         // dejamos que siga resonando.
         if (oldFret == newFret) continue;
 
-        // Si la nueva digitación MUTEA esta cuerda, hacemos un release corto
-        // de la voz ya activa. Esto evita que, por ejemplo, la 6a cuerda de
-        // G/Em siga resonando debajo de C = x32010 y ensucie su bajo.
-        if (newFret < 0) {
-            releaseString(physicalString, 20);
-            continue;
-        }
-
-        // Si la cuerda sigue permitida pero cambia de nota, conservamos la
-        // estrategia v0.8/v0.10: cancelamos solo voces FUTURAS. La cola activa
-        // termina de forma natural y el siguiente ataque reemplaza la cuerda.
-        cancelFutureVoicesOnString(physicalString);
+        // Cambiar de traste también invalida la nota anterior, aunque la
+        // cuerda siga permitida. Un ritmo parcial puede no volver a tocarla
+        // durante varios golpes: no debe resonar el acorde anterior debajo.
+        // releaseString cancela ataques pendientes y apaga la cola suavemente.
+        releaseString(physicalString, 20);
     }
 
     mAppliedChord = requestedChord;
@@ -933,312 +1011,16 @@ void GuitarEngine::triggerCustomPatternEvent(
                     event.velocity, event.layer);
                 break;
 
-            default:
-                break;
-        }
-    }
-}
-
-void GuitarEngine::triggerPatternEvent(
-    int tick,
-    int64_t tickFrame) {
-
-    const int pattern = mPattern.load();
-
-    if (pattern == 0) {
-        // POP/ROCK: de momento todo MF.
-        switch (tick) {
-            case 0:  triggerStrum(true,  tickFrame, 0.92f, false, MF); break;
-            case 4:  triggerStrum(true,  tickFrame, 0.72f, false, MF); break;
-            case 6:  triggerStrum(false, tickFrame, 0.56f, true,  MF); break;
-            case 10: triggerStrum(false, tickFrame, 0.56f, true,  MF); break;
-            case 12: triggerStrum(true,  tickFrame, 0.82f, false, MF); break;
-            case 14: triggerStrum(false, tickFrame, 0.62f, true,  MF); break;
-            default: break;
-        }
-    } else if (pattern == 1) {
-        // BALADA ROCK: de momento todo MF.
-        switch (tick) {
-            case 0:  triggerStrum(true,  tickFrame, 0.92f, false, MF); break;
-            case 6:  triggerStrum(false, tickFrame, 0.42f, true,  MF); break;
-            case 8:  triggerStrum(true,  tickFrame, 0.72f, false, MF); break;
-            case 12: triggerStrum(true,  tickFrame, 0.55f, true,  MF); break;
-            case 14: triggerStrum(false, tickFrame, 0.48f, true,  MF); break;
-            default: break;
-        }
-    } else if (pattern == 4) {
-        // GOLDEN 01 — ako/backing-tracks "strum_up_down".
-        // Copia deliberadamente la lógica del proyecto de referencia:
-        // - 8 corcheas por compás
-        // - DOWN velocity MIDI 80
-        // - UP   velocity MIDI 70
-        // - 12 ticks entre notas, 480 PPQ
-        // - DOWN grave->aguda / UP aguda->grave
-        //
-        // No añadimos jitter, treble-only ni Palm Mute para que la
-        // comparación con la referencia sea limpia.
-        if ((tick % 2) == 0) {
-            const int eighthIndex = tick / 2;
-            const bool down = (eighthIndex % 2) == 0;
-            const float velocity =
-                down ? (80.0f / 127.0f) : (70.0f / 127.0f);
-
-            triggerStrumWithDelay(
-                down,
-                tickFrame,
-                velocity,
-                false,
-                MF,
-                framesForMidiTicks(12, 480));
-        }
-    } else if (pattern == 5) {
-        // GOLDEN 02 — ako/backing-tracks "folk".
-        // Beat 1: bajo raíz (MIDI velocity 85)
-        // Beat 2: acorde superior simultáneo (70)
-        // Beat 3: bajo raíz (85)
-        // Beat 4: acorde superior simultáneo (70)
-        switch (tick) {
-            case 0:
-            case 8:
-                triggerRootBass(
-                    tickFrame,
-                    85.0f / 127.0f);
-                break;
-
-            case 4:
-            case 12:
-                triggerChordWithoutRootBass(
-                    tickFrame,
-                    70.0f / 127.0f,
-                    MF);
+            case EVENT_RELEASE_TARGET:
+                // El evento no produce un ataque: se agenda igual que una
+                // nota para respetar offsetMs y conservar el reloj estable.
+                queueTargetRelease(
+                    event.target, event.releaseMs, eventFrame);
                 break;
 
             default:
                 break;
         }
-    } else if (pattern == 6 || pattern == 7) {
-        // CHORDBOX FOLK — D D U - U D U -
-        // Dos métodos A/B con el MISMO patrón y MISMA curva de velocity:
-        // 6 = ChordBox original: 20 ms para TODO el barrido.
-        // 7 = GuitarPilot histórico: 13 ms ENTRE cuerdas.
-        const bool totalSpread = (pattern == 6);
-        switch (tick) {
-            case 0:  triggerChordBoxReferenceStrum(true,  tickFrame, 90, totalSpread); break;
-            case 2:  triggerChordBoxReferenceStrum(true,  tickFrame, 90, totalSpread); break;
-            case 4:  triggerChordBoxReferenceStrum(false, tickFrame, 90, totalSpread); break;
-            case 8:  triggerChordBoxReferenceStrum(false, tickFrame, 90, totalSpread); break;
-            case 10: triggerChordBoxReferenceStrum(true,  tickFrame, 90, totalSpread); break;
-            case 12: triggerChordBoxReferenceStrum(false, tickFrame, 90, totalSpread); break;
-            default: break;
-        }
-    } else if (pattern == 8 || pattern == 9) {
-        // CHORDBOX POP BALLAD — replica EXACTA del event loop del proyecto:
-        // D . . U D . . U (el patrón suma 3 beats y ChordBox lo vuelve
-        // a envolver hasta completar el compás). En 4/4 esto produce
-        // inicios en beats 0, 1, 1.5, 2.5 y 3.0.
-        // 8 = 20 ms total; 9 = 13 ms entre cuerdas.
-        const bool totalSpread = (pattern == 8);
-        switch (tick) {
-            case 0:  triggerChordBoxReferenceStrum(true,  tickFrame, 90, totalSpread); break;
-            case 4:  triggerChordBoxReferenceStrum(false, tickFrame, 90, totalSpread); break;
-            case 6:  triggerChordBoxReferenceStrum(true,  tickFrame, 90, totalSpread); break;
-            case 10: triggerChordBoxReferenceStrum(false, tickFrame, 90, totalSpread); break;
-            case 12: triggerChordBoxReferenceStrum(true,  tickFrame, 90, totalSpread); break;
-            default: break;
-        }
-    } else if (pattern == 10) {
-        // ZONAS DE CUERDAS — prueba de interpretación física.
-        // Combina graves/agudas/acorde completo con la máscara del acorde.
-        // C = x32010, por ejemplo: BASS_3 termina siendo solo cuerdas 5 y 4;
-        // ROOT_BASS sigue siendo exclusivamente cuerda 5/traste 3 (C3).
-        switch (tick) {
-            case 0:
-                triggerTargetStrum(true, tickFrame, 0.84f, BASS_3, MF, 14.0);
-                break;
-            case 2:
-                triggerTargetStrum(false, tickFrame, 0.56f, TREBLE_3, MF, 12.0);
-                break;
-            case 4:
-                triggerTargetStrum(true, tickFrame, 0.78f, ALL_ALLOWED, MF, 20.0);
-                break;
-            case 6:
-                triggerTargetStrum(false, tickFrame, 0.58f, TREBLE_4, MF, 14.0);
-                break;
-            case 8:
-                triggerTargetStrum(true, tickFrame, 0.82f, ROOT_BASS, MF, 0.0);
-                break;
-            case 10:
-                triggerTargetStrum(false, tickFrame, 0.54f, TREBLE_3, MF, 12.0);
-                break;
-            case 12:
-                triggerTargetStrum(true, tickFrame, 0.76f, BASS_3, MF, 14.0);
-                break;
-            case 14:
-                triggerTargetStrum(true, tickFrame, 0.80f, ALL_ALLOWED, MF, 20.0);
-                break;
-            default:
-                break;
-        }
-    } else if (pattern == 11) {
-        // ZONAS HUMAN — mismo patrón de ZONAS, pero con una capa controlada
-        // de interpretación inspirada en lo observado en Unreal/FSZ:
-        // - reloj musical intacto;
-        // - 0..6 ms de retardo local por evento (centro 3 ms);
-        // - +/-10% de spread total;
-        // - +/-3% de ganancia por golpe y por cuerda.
-        // Sirve como A/B directo contra pattern 10.
-        switch (tick) {
-            case 0:
-                triggerHumanizedTargetStrum(true, tickFrame, 0.84f, BASS_3, MF, 14.0);
-                break;
-            case 2:
-                triggerHumanizedTargetStrum(false, tickFrame, 0.56f, TREBLE_3, MF, 12.0);
-                break;
-            case 4:
-                triggerHumanizedTargetStrum(true, tickFrame, 0.78f, ALL_ALLOWED, MF, 20.0);
-                break;
-            case 6:
-                triggerHumanizedTargetStrum(false, tickFrame, 0.58f, TREBLE_4, MF, 14.0);
-                break;
-            case 8:
-                triggerHumanizedTargetStrum(true, tickFrame, 0.82f, ROOT_BASS, MF, 0.0);
-                break;
-            case 10:
-                triggerHumanizedTargetStrum(false, tickFrame, 0.54f, TREBLE_3, MF, 12.0);
-                break;
-            case 12:
-                triggerHumanizedTargetStrum(true, tickFrame, 0.76f, BASS_3, MF, 14.0);
-                break;
-            case 14:
-                triggerHumanizedTargetStrum(true, tickFrame, 0.80f, ALL_ALLOWED, MF, 20.0);
-                break;
-            default:
-                break;
-        }
-    } else if (pattern == 12) {
-        // ROCK PULSE 01 — nueva lectura física:
-        // AGUDAS UP -> AGUDAS DOWN -> BAJO -> pequeña espera.
-        // El gesto agudo usa SOLO cuerdas 3,2,1.
-        // Después del bajo queda una semicorchea de aire y el ciclo repite.
-        switch (tick) {
-            case 0:
-            case 4:
-            case 8:
-            case 12:
-                triggerHumanizedTargetStrum(
-                    false, tickFrame, 0.50f, TREBLE_3, MF, 10.0);
-                break;
-
-            case 1:
-            case 5:
-            case 9:
-            case 13:
-                triggerHumanizedTargetStrum(
-                    true, tickFrame, 0.68f, TREBLE_3, MF, 12.0);
-                break;
-
-            case 2:
-            case 6:
-            case 10:
-            case 14:
-                triggerHumanizedTargetStrum(
-                    true, tickFrame, 0.84f, ROOT_BASS, MF, 0.0);
-                break;
-
-            // 3,7,11,15 = pequeña espera.
-            default:
-                break;
-        }
-    } else if (pattern == 13) {
-        // LATIN BALLAD 01 — referencia de prueba: "Hojas Secas".
-        // Los bajos se conservan separados. SOLO los golpes agudos alternan
-        // dirección y nunca bajan de la cuerda 4:
-        // DOWN -> UP -> DOWN -> UP...
-        switch (tick) {
-            case 0:
-                triggerHumanizedTargetStrum(
-                    true, tickFrame, 0.84f, ROOT_BASS, MF, 0.0);
-                break;
-            case 4:
-                triggerHumanizedTargetStrum(
-                    true, tickFrame, 0.78f, ROOT_BASS, MF, 0.0);
-                break;
-
-            // Frase aguda 1: empieza DOWN y alterna.
-            case 6:
-                triggerHumanizedTargetStrum(
-                    true, tickFrame, 0.62f, TREBLE_4, MF, 12.0);
-                break;
-            case 7:
-                triggerHumanizedTargetStrum(
-                    false, tickFrame, 0.48f, TREBLE_4, MF, 10.0);
-                break;
-            case 8:
-                triggerHumanizedTargetStrum(
-                    true, tickFrame, 0.66f, TREBLE_4, MF, 12.0);
-                break;
-            case 9:
-                triggerHumanizedTargetStrum(
-                    false, tickFrame, 0.50f, TREBLE_4, MF, 10.0);
-                break;
-
-            // Frase aguda 2: mantiene la alternancia DOWN/UP.
-            case 12:
-                triggerHumanizedTargetStrum(
-                    true, tickFrame, 0.60f, TREBLE_4, MF, 12.0);
-                break;
-            case 13:
-                triggerHumanizedTargetStrum(
-                    false, tickFrame, 0.46f, TREBLE_4, MF, 10.0);
-                break;
-            case 14:
-                triggerHumanizedTargetStrum(
-                    true, tickFrame, 0.68f, TREBLE_4, MF, 12.0);
-                break;
-            case 15:
-                triggerHumanizedTargetStrum(
-                    false, tickFrame, 0.50f, TREBLE_4, MF, 10.0);
-                break;
-            default:
-                break;
-        }
-    } else if (pattern == 3) {
-        // ROCK MUTED: prueba inicial usando articulación Palm Mute real.
-        // Graves apagados alternados con rasgueos MF más abiertos.
-        switch (tick) {
-            case 0:
-                triggerRootBass(tickFrame, 0.84f);
-                break;
-            case 2:
-                triggerStrum(true, tickFrame, 0.72f, false, PALM_MUTE);
-                break;
-            case 4:
-                triggerStrum(true, tickFrame, 0.82f, false, MF);
-                break;
-            case 6:
-                triggerStrum(false, tickFrame, 0.50f, true, MF);
-                break;
-            case 8:
-                triggerRootBass(tickFrame, 0.80f);
-                break;
-            case 10:
-                triggerStrum(true, tickFrame, 0.70f, false, PALM_MUTE);
-                break;
-            case 12:
-                triggerStrum(true, tickFrame, 0.84f, false, MF);
-                break;
-            case 14:
-                triggerStrum(false, tickFrame, 0.54f, true, MF);
-                break;
-            default:
-                break;
-        }
-    } else {
-        // PIMAMI se agenda fuera de la cuadrícula rígida de semicorcheas.
-        // Aquí no hacemos nada: el callback llama triggerPimamiEvent()
-        // y usa framesForPimamiGap() para conservar su propio fraseo.
-        (void)tick;
-        (void)tickFrame;
     }
 }
 
@@ -1253,10 +1035,48 @@ void GuitarEngine::startVoice(
     if (mSamples[sampleIndex].pcm.empty()) return;
     if (physicalString < 1 || physicalString > 6) return;
 
-    // Regla física:
-    // al volver a atacar la misma cuerda, la vibración anterior
-    // cae suavemente en vez de acumularse indefinidamente.
-    releaseString(physicalString, 5);
+    // Solo se agenda. La cuerda que ya suena conserva su voz hasta el ataque.
+    // Capacidad fija: si se satura, se descarta el ataque entrante.
+    if (mPendingAttackCount == kMaxPendingAttacks) return;
+    mPendingAttacks[mPendingAttackCount++] = {
+        sampleIndex, physicalString, std::max(startFrame, mFrameCounter),
+        mAttackOrder++, std::clamp(gain, 0.0f, 1.0f), bypassMaster};
+    std::push_heap(mPendingAttacks.begin(),
+                   mPendingAttacks.begin() + mPendingAttackCount, LaterAttack{});
+}
+
+void GuitarEngine::processPendingAttacks() {
+    while (mPendingAttackCount > 0 && mPendingAttacks.front().frame <= mFrameCounter) {
+        std::pop_heap(mPendingAttacks.begin(),
+                      mPendingAttacks.begin() + mPendingAttackCount, LaterAttack{});
+        const PendingAttack attack = mPendingAttacks[--mPendingAttackCount];
+        activateAttack(attack);
+    }
+}
+
+void GuitarEngine::processPendingReleases() {
+    while (mPendingReleaseCount > 0 &&
+           mPendingReleases.front().frame <= mFrameCounter) {
+        std::pop_heap(
+            mPendingReleases.begin(),
+            mPendingReleases.begin() + mPendingReleaseCount,
+            LaterRelease{});
+        const PendingRelease release =
+            mPendingReleases[--mPendingReleaseCount];
+        releaseTargetStrings(release.target, release.fadeMs);
+    }
+}
+
+void GuitarEngine::activateAttack(const PendingAttack& attack) {
+    for (auto& voice : mVoices) {
+        if (!voice.active || voice.physicalString != attack.physicalString) continue;
+        // Dos ataques de la misma cuerda/frame: prevalece el último publicado.
+        if (voice.startFrame == mFrameCounter && voice.position == 0.0) {
+            voice.active = false;
+        } else {
+            fadeVoice(voice, 5);
+        }
+    }
 
     Voice* target = nullptr;
 
@@ -1273,17 +1093,17 @@ void GuitarEngine::startVoice(
     }
 
     target->active = true;
-    target->sampleIndex = sampleIndex;
-    target->physicalString = physicalString;
+    target->sampleIndex = attack.sampleIndex;
+    target->physicalString = attack.physicalString;
     target->position = 0.0;
 
     target->step =
-        static_cast<double>(mSamples[sampleIndex].sampleRate) /
+        static_cast<double>(mSamples[attack.sampleIndex].sampleRate) /
         static_cast<double>(mOutputSampleRate);
 
-    target->startFrame = startFrame;
-    target->gain = std::clamp(gain, 0.0f, 1.0f);
-    target->bypassMaster = bypassMaster;
+    target->startFrame = mFrameCounter;
+    target->gain = attack.gain;
+    target->bypassMaster = attack.bypassMaster;
 
     target->releaseFramesTotal = 0;
     target->releaseFramesLeft = 0;
@@ -1338,6 +1158,7 @@ oboe::DataCallbackResult GuitarEngine::onAudioReady(
     void* audioData,
     int32_t numFrames) {
 
+    applyPendingControl();
     auto* out = static_cast<float*>(audioData);
 
     for (int32_t frame = 0; frame < numFrames; ++frame) {
@@ -1410,19 +1231,14 @@ oboe::DataCallbackResult GuitarEngine::onAudioReady(
 
                     mNextTickFrame +=
                         framesPerSixteenth();
-                } else {
-                    triggerPatternEvent(
-                        mTickIndex,
-                        mNextTickFrame);
-
-                    mTickIndex =
-                        (mTickIndex + 1) % patternLengthTicks();
-
-                    mNextTickFrame +=
-                        framesPerSixteenth();
                 }
             }
         }
+
+        // Una liberación que coincide con un ataque ocurre antes de él, para
+        // cortar únicamente la resonancia anterior y dejar entrar el golpe.
+        processPendingReleases();
+        processPendingAttacks();
 
         float normalMix = 0.0f;
         float diagnosticMix = 0.0f;

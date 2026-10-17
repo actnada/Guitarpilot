@@ -15,7 +15,7 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         private const val LAYER_MF = 0
-        private const val LAYER_PALM_MUTE = 1
+
 
         // Estado de SESIÓN, no de Activity. Sobrevive a rotaciones y a
         // recreaciones de la pantalla mientras el proceso siga vivo.
@@ -28,7 +28,7 @@ class MainActivity : AppCompatActivity() {
         // Valores iniciales: C, G, D, Em, Am, Bm.
         private var chordSlots = intArrayOf(1, 8, 3, 17, 22, 24)
 
-        private var currentPattern = 0
+        private var currentPattern = 2
         private var bpm = 100
         private var stringDelayMs = 13
         private var masterVolume = 85
@@ -43,9 +43,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var txtBank: TextView
     private lateinit var btnPlayPause: Button
 
-    // Banco confirmado:
-    // MF: 118 muestras. S1 llega a f19.
-    // FF: 117 muestras. S1 llega a f18.
+    // Cobertura de cuerdas y trastes del motor.
     private val maxMfFretByString =
         intArrayOf(19, 19, 18, 18, 19, 19)
 
@@ -66,35 +64,26 @@ class MainActivity : AppCompatActivity() {
         // recargar vectores PCM mientras Oboe está leyendo sería innecesario
         // y podría introducir cortes o condiciones de carrera.
         if (!hadEngine || !bankLoaded) {
-            val mfCount = loadLayer(
-                layer = LAYER_MF,
-                suffix = "mf",
-                maxFretByString = maxMfFretByString,
-                firstSampleIndex = 0
-            )
-
-            require(mfCount == 118) {
-                "Se esperaban 118 MF, se cargaron $mfCount"
-            }
-
-            val palmMuteCount = loadPalmMuteMicRos(
-                firstSampleIndex = mfCount
-            )
-
-            require(palmMuteCount == 17) {
-                "Se esperaban 17 Palm Mute, se cargaron $palmMuteCount"
-            }
+            val mfCount = loadEmilyBank()
 
             bankLoaded = true
-            txtBank.text = "Banco: $mfCount MF + $palmMuteCount Palm Mute"
+            txtBank.text = "Banco: Emily · $mfCount notas"
 
             NativeAudioEngine.setBpm(bpm)
             NativeAudioEngine.setStringDelayMs(stringDelayMs)
             NativeAudioEngine.setMasterVolume(masterVolume / 100f)
-            NativeAudioEngine.setPattern(currentPattern)
+            val preset = RhythmPresets.find(currentPattern)
+            if (preset != null) {
+                val definition = RhythmPresets.load(assets, preset)
+                check(RhythmJsonCodec.applyToEngine(definition.copy(defaultBpm = bpm))) {
+                    "No se pudo restaurar ${preset.name}"
+                }
+            } else {
+                NativeAudioEngine.setPattern(currentPattern)
+            }
             NativeAudioEngine.setChord(currentChordId)
         } else {
-            txtBank.text = "Banco: 118 MF + 17 Palm Mute · sesión activa"
+            txtBank.text = "Banco: Emily · 118 notas · sesión activa"
         }
 
         updateUi()
@@ -105,190 +94,48 @@ class MainActivity : AppCompatActivity() {
         val sampleRate: Int
     )
 
-    private fun loadLayer(
-        layer: Int,
-        suffix: String,
-        maxFretByString: IntArray,
-        firstSampleIndex: Int
-    ): Int {
+    // Rangos y centros de afinación de Emilyguitar/emily_basic.sfz.
+    private data class EmilyRegion(val low: Int, val high: Int, val center: Int, val note: String)
 
+    private val emilyRegions = listOf(
+        EmilyRegion(33, 38, 37, "db2"), EmilyRegion(39, 40, 40, "e2"),
+        EmilyRegion(41, 43, 42, "gb2"), EmilyRegion(44, 46, 45, "a2"),
+        EmilyRegion(47, 49, 48, "c3"), EmilyRegion(50, 52, 51, "eb3"),
+        EmilyRegion(53, 55, 54, "gb3"), EmilyRegion(56, 58, 57, "a3"),
+        EmilyRegion(59, 61, 60, "c4"), EmilyRegion(62, 64, 63, "eb4"),
+        EmilyRegion(65, 67, 66, "gb4"), EmilyRegion(68, 70, 69, "a4"),
+        EmilyRegion(71, 73, 72, "c5"), EmilyRegion(74, 76, 75, "eb5"),
+        EmilyRegion(77, 79, 78, "gb5"), EmilyRegion(80, 82, 81, "a5"),
+        EmilyRegion(83, 84, 84, "c6"), EmilyRegion(85, 89, 86, "d6")
+    )
+
+    private fun loadEmilyBank(): Int {
+        val cache = mutableMapOf<String, PcmWav>()
+        val openMidi = intArrayOf(64, 59, 55, 50, 45, 40)
         var loaded = 0
-
         for (stringNumber in 1..6) {
-            val maxFret =
-                maxFretByString[stringNumber - 1]
-
-            for (fret in 0..maxFret) {
-                val resourceName =
-                    buildResourceName(
-                        stringNumber,
-                        fret,
-                        suffix
-                    )
-
-                val resId =
-                    resources.getIdentifier(
-                        resourceName,
-                        "raw",
-                        packageName
-                    )
-
-                require(resId != 0) {
-                    "Falta recurso RAW: $resourceName.wav"
-                }
-
-                val wav =
+            for (fret in 0..maxMfFretByString[stringNumber - 1]) {
+                val midi = openMidi[stringNumber - 1] + fret
+                val region = emilyRegions.first { midi in it.low..it.high }
+                // El motor usa una capa MF; las otras dinámicas y tomas se
+                // conservan con sus nombres originales para futuras ampliaciones.
+                val resourceName = "${region.note}_mf_rr1"
+                val wav = cache.getOrPut(resourceName) {
+                    val resId = resources.getIdentifier(resourceName, "raw", packageName)
+                    require(resId != 0) { "Falta recurso Emily: $resourceName.wav" }
                     readPcm16Wav(resId)
-
+                }
+                // Ajusta la reproducción al tono solicitado sin modificar el WAV.
+                val pitchedRate = (wav.sampleRate * Math.pow(2.0, (midi - region.center) / 12.0)).toInt()
                 NativeAudioEngine.loadSample(
-                    index = firstSampleIndex + loaded,
-                    stringNumber = stringNumber,
-                    fret = fret,
-                    layer = layer,
-                    pcm16 = wav.samples,
-                    sampleRate = wav.sampleRate
+                    index = loaded++, stringNumber = stringNumber, fret = fret,
+                    layer = LAYER_MF, pcm16 = wav.samples, sampleRate = pitchedRate
                 )
-
-                loaded++
             }
         }
-
+        // Sin muestras Palm Mute dedicadas: el motor recurre a las notas MF.
         return loaded
     }
-
-    private fun buildResourceName(
-        stringNumber: Int,
-        fret: Int,
-        suffix: String
-    ): String {
-
-        // Afinación estándar MIDI:
-        // 1=E4, 2=B3, 3=G3, 4=D3, 5=A2, 6=E2
-        val openMidi = when (stringNumber) {
-            1 -> 64
-            2 -> 59
-            3 -> 55
-            4 -> 50
-            5 -> 45
-            6 -> 40
-            else -> error("Cuerda inválida")
-        }
-
-        val midi = openMidi + fret
-
-        val noteNames = arrayOf(
-            "c", "cs", "d", "ds",
-            "e", "f", "fs", "g",
-            "gs", "a", "as", "b"
-        )
-
-        val note = noteNames[midi % 12]
-        val octave = (midi / 12) - 1
-
-        return "s${stringNumber}_f${
-            fret.toString().padStart(2, '0')
-        }_${note}${octave}_$suffix"
-    }
-
-    private data class PalmMuteSlot(
-        val stringNumber: Int,
-        val fret: Int
-    )
-
-    private val palmMuteSlots = listOf(
-        PalmMuteSlot(6, 0),
-        PalmMuteSlot(6, 3),
-
-        PalmMuteSlot(5, 0),
-        PalmMuteSlot(5, 2),
-        PalmMuteSlot(5, 3),
-
-        PalmMuteSlot(4, 0),
-        PalmMuteSlot(4, 2),
-        PalmMuteSlot(4, 4),
-
-        PalmMuteSlot(3, 0),
-        PalmMuteSlot(3, 2),
-        PalmMuteSlot(3, 4),
-
-        PalmMuteSlot(2, 0),
-        PalmMuteSlot(2, 1),
-        PalmMuteSlot(2, 3),
-
-        PalmMuteSlot(1, 0),
-        PalmMuteSlot(1, 2),
-        PalmMuteSlot(1, 3)
-    )
-
-    private fun loadPalmMuteMicRos(
-        firstSampleIndex: Int
-    ): Int {
-        var loaded = 0
-
-        for (slot in palmMuteSlots) {
-            val resourceName = buildPalmMuteResourceName(
-                slot.stringNumber,
-                slot.fret
-            )
-
-            val resId = resources.getIdentifier(
-                resourceName,
-                "raw",
-                packageName
-            )
-
-            require(resId != 0) {
-                "Falta Palm Mute RAW: $resourceName.wav"
-            }
-
-            val wav = readPcm16Wav(resId)
-
-            NativeAudioEngine.loadSample(
-                index = firstSampleIndex + loaded,
-                stringNumber = slot.stringNumber,
-                fret = slot.fret,
-                layer = LAYER_PALM_MUTE,
-                pcm16 = wav.samples,
-                sampleRate = wav.sampleRate
-            )
-
-            loaded++
-        }
-
-        return loaded
-    }
-
-    private fun buildPalmMuteResourceName(
-        stringNumber: Int,
-        fret: Int
-    ): String {
-        val openMidi = when (stringNumber) {
-            1 -> 64
-            2 -> 59
-            3 -> 55
-            4 -> 50
-            5 -> 45
-            6 -> 40
-            else -> error("Cuerda inválida")
-        }
-
-        val midi = openMidi + fret
-
-        val noteNames = arrayOf(
-            "c", "cs", "d", "ds",
-            "e", "f", "fs", "g",
-            "gs", "a", "as", "b"
-        )
-
-        val note = noteNames[midi % 12]
-        val octave = (midi / 12) - 1
-
-        // Copiaremos take1 de MicRos y lo renombraremos a este formato corto.
-        return "pm_s${stringNumber}_f${
-            fret.toString().padStart(2, '0')
-        }_${note}${octave}_mf"
-    }
-
     private fun readPcm16Wav(
         resId: Int
     ): PcmWav {
@@ -358,8 +205,8 @@ class MainActivity : AppCompatActivity() {
                         "Solo PCM soportado"
                     }
 
-                    require(bits == 16) {
-                        "Solo PCM16 soportado"
+                    require(bits == 16 || bits == 24) {
+                        "Solo PCM16 o PCM24 soportado"
                     }
 
                     require(
@@ -385,23 +232,22 @@ class MainActivity : AppCompatActivity() {
 
         val raw = pcm!!
         val frames =
-            raw.size / (2 * channels)
+            raw.size / ((bits / 8) * channels)
 
         val mono = ShortArray(frames)
         var position = 0
 
         fun nextSample(): Int {
-            val lo =
-                raw[position++].toInt() and 0xFF
-
-            val hi =
-                raw[position++].toInt()
-
-            return (
-                (hi shl 8) or lo
-            ).toShort().toInt()
+            val lo = raw[position++].toInt() and 0xFF
+            val mid = raw[position++].toInt() and 0xFF
+            return if (bits == 24) {
+                val hi = raw[position++].toInt()
+                // PCM24 con signo a PCM16, sin alterar el archivo original.
+                ((hi shl 16) or (mid shl 8) or lo) shr 8
+            } else {
+                ((mid shl 8) or lo).toShort().toInt()
+            }
         }
-
         for (i in 0 until frames) {
             mono[i] =
                 if (channels == 1) {
@@ -511,7 +357,7 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(
             R.id.btnQuickPattern1
         ).setOnClickListener {
-            selectPattern(11) // ZONAS HUMAN
+            selectPattern(14) // Balada 02
         }
 
         findViewById<Button>(
@@ -767,24 +613,27 @@ class MainActivity : AppCompatActivity() {
     private fun selectPattern(
         id: Int
     ) {
+        val preset = RhythmPresets.find(id)
+        if (preset != null) {
+            val applied = runCatching {
+                val definition = RhythmPresets.load(assets, preset)
+                if (RhythmJsonCodec.applyToEngine(definition)) {
+                    currentPattern = id
+                    bpm = definition.defaultBpm
+                    true
+                } else false
+            }.getOrDefault(false)
+            if (!applied) {
+                Toast.makeText(this, "No se pudo cargar ${preset.name}", Toast.LENGTH_SHORT).show()
+            }
+            updateUi()
+            return
+        }
         RhythmSession.currentCustomName = null
         RhythmSession.currentCustomBpm = null
         NativeAudioEngine.clearCustomPattern()
 
         currentPattern = id
-
-        // Para las pruebas Golden arrancamos al BPM exacto
-        // de los ejemplos externos que escuchamos.
-        when (id) {
-            4 -> bpm = 120 // pop-sections.btml / strum_up_down
-            5 -> bpm = 100 // folk-strum.btml / folk
-            6, 7 -> bpm = 100 // ChordBox Folk A/B
-            8, 9 -> bpm = 90  // ChordBox Pop Ballad A/B
-            10 -> bpm = 100   // prueba de zonas físicas
-            11 -> bpm = 100   // mismo patrón con humanización controlada
-            12 -> bpm = 100   // ROCK PULSE · "BON CHA-CA"
-            13 -> bpm = 90    // BALLAD PULSE · "NO NO ahora no ahora no"
-        }
 
         NativeAudioEngine.setBpm(bpm)
         NativeAudioEngine.setPattern(id)
@@ -792,45 +641,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun patternName(): String {
-        return when (currentPattern) {
-            0 -> "Pop/Rock · MF"
-            1 -> "Balada Rock · MF"
-            2 -> "PIMAMI · timing humano · cambio en P"
-            3 -> "Rock Muted · Palm Mute real"
-            4 -> "GOLDEN 01 · ako strum_up_down · 120 BPM"
-            5 -> "GOLDEN 02 · ako folk · 100 BPM"
-            6 -> "CB FOLK A · 20 ms TOTAL"
-            7 -> "CB FOLK B · 13 ms POR CUERDA"
-            8 -> "CB BALLAD A · 20 ms TOTAL"
-            9 -> "CB BALLAD B · 13 ms POR CUERDA"
-            10 -> "ZONAS · referencia limpia"
-            11 -> "ZONAS HUMAN · microtiming + dinámica"
-            12 -> "ROCK PULSE 01 · agudas ↑↓ + bajo"
-            13 -> "LATIN BALLAD 01 · agudas ↓↑ alternadas"
-            else -> "Patrón experimental"
-        }
+        return RhythmPresets.find(currentPattern)?.name
+            ?: "PIMAMI · timing humano · cambio en P"
     }
-
     private fun showPatternMenu(anchor: Button) {
         val popup = PopupMenu(this, anchor)
 
-        val patterns = listOf(
-            0 to "Pop/Rock",
-            1 to "Balada Rock",
-            2 to "PIMAMI",
-            3 to "Rock Muted",
-            4 to "Golden 01 · ako",
-            5 to "Golden 02 · folk",
-            6 to "CB Folk · 20 ms",
-            7 to "CB Folk · 13 ms",
-            8 to "CB Ballad · 20 ms",
-            9 to "CB Ballad · 13 ms",
-            10 to "Zonas · referencia",
-            11 to "Zonas Human",
-            12 to "Rock Pulse 01 · agudas ↑↓ + bajo",
-            13 to "Latin Ballad 01 · agudas ↓↑"
-        )
-
+        val patterns = listOf(2 to "PIMAMI") +
+            RhythmPresets.entries.map { it.id to it.name }
         patterns.forEach { (id, name) ->
             popup.menu.add(0, id, id, name)
         }

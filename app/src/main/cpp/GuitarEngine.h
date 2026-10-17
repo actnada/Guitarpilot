@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <memory>
 #include <vector>
+#include "LatestControl.h"
 
 class GuitarEngine : public oboe::AudioStreamDataCallback,
                      public oboe::AudioStreamErrorCallback {
@@ -15,6 +16,7 @@ public:
     static constexpr int kMaxFrets = 20;
     static constexpr int kChordCount = 37; // OPEN + 12 mayores + 12 menores + 12 séptimas
     static constexpr int kMaxCustomEvents = 128;
+    static constexpr int kMaxPendingAttacks = kMaxCustomEvents * kStringCount + kMaxVoices;
 
     enum Layer {
         MF = 0,
@@ -36,7 +38,8 @@ public:
         EVENT_STRUM_UP = 1,
         EVENT_ROOT_BASS = 2,
         EVENT_ALT_BASS = 3,
-        EVENT_PLUCK_STRING = 4
+        EVENT_PLUCK_STRING = 4,
+        EVENT_RELEASE_TARGET = 5
     };
 
     bool open();
@@ -65,6 +68,7 @@ public:
         const int* stringNumbers,
         const float* velocities,
         const float* spreadsMs,
+        const int* releaseMs,
         const int* humanizeFlags,
         int count);
     void clearCustomPattern();
@@ -78,6 +82,8 @@ public:
     void onErrorAfterClose(oboe::AudioStream*, oboe::Result) override;
 
 private:
+    friend struct GuitarEngineTestAccess;
+
     struct Sample {
         std::vector<float> pcm;
         int sampleRate = 44100;
@@ -116,8 +122,57 @@ private:
         int stringNumber = 1;
         float velocity = 0.8f;
         float spreadMs = 13.0f;
+        int releaseMs = 20;
         bool humanize = false;
     };
+
+    enum class TransportReset { Start, Immediate, Stop };
+
+    struct ControlState {
+        bool playing = false;
+        int pattern = 2;
+        bool custom = false;
+        int count = 0;
+        int ticksPerBar = 16;
+        std::array<CustomRhythmEvent, kMaxCustomEvents> events{};
+        uint64_t patternVersion = 0;
+        uint64_t resetVersion = 0;
+        TransportReset reset = TransportReset::Stop;
+    };
+
+    struct PendingAttack {
+        int sampleIndex;
+        int physicalString;
+        int64_t frame;
+        uint64_t order;
+        float gain;
+        bool bypassMaster;
+    };
+
+    struct LaterAttack {
+        bool operator()(const PendingAttack& a, const PendingAttack& b) const {
+            return a.frame > b.frame || (a.frame == b.frame && a.order > b.order);
+        }
+    };
+
+    struct PendingRelease {
+        StringTarget target;
+        int fadeMs;
+        int64_t frame;
+        uint64_t order;
+    };
+
+    struct LaterRelease {
+        bool operator()(const PendingRelease& a, const PendingRelease& b) const {
+            return a.frame > b.frame || (a.frame == b.frame && a.order > b.order);
+        }
+    };
+
+    void applyPendingControl();
+    void processPendingAttacks();
+    void processPendingReleases();
+    void activateAttack(const PendingAttack& attack);
+    void fadeVoice(Voice& voice, int fadeMs);
 
     void resetTransport();
     int64_t framesPerSixteenth() const;
@@ -126,12 +181,13 @@ private:
     int sampleWithFallback(int physicalString, int fret, int preferredLayer) const;
 
     void applyPendingChordChange();
-    int patternLengthTicks() const;
     int64_t framesForPimamiGap(int stepIndex) const;
     int64_t framesForMidiTicks(int midiTicks, int ppq = 480) const;
     void triggerPimamiEvent(int stepIndex, int64_t eventFrame);
     void releaseString(int physicalString, int fadeMs);
-    void cancelFutureVoicesOnString(int physicalString);
+    void releaseTargetStrings(StringTarget target, int fadeMs);
+    void queueTargetRelease(StringTarget target, int fadeMs, int64_t frame);
+    void cancelPendingAttacksOnString(int physicalString);
 
     void triggerStrum(bool down, int64_t startFrame,
                       float velocity = 1.0f,
@@ -183,7 +239,6 @@ private:
 
     void triggerRootBass(int64_t startFrame, float velocity = 1.0f);
     void triggerAltBass(int64_t startFrame, float velocity = 1.0f);
-    void triggerPatternEvent(int tick, int64_t tickFrame);
     void triggerCustomPatternEvent(int tick, int64_t tickFrame);
 
     void startVoice(int sampleIndex, int physicalString,
@@ -196,6 +251,17 @@ private:
 
     std::array<Sample, kSampleCapacity> mSamples;
     std::array<Voice, kMaxVoices> mVoices;
+    std::array<PendingAttack, kMaxPendingAttacks> mPendingAttacks{};
+    int mPendingAttackCount = 0;
+    uint64_t mAttackOrder = 0;
+    std::array<PendingRelease, kMaxCustomEvents> mPendingReleases{};
+    int mPendingReleaseCount = 0;
+    uint64_t mReleaseOrder = 0;
+
+    LatestControl<ControlState> mControlMailbox;
+    ControlState mAudioControl{};
+    uint64_t mAppliedPatternVersion = 0;
+    uint64_t mAppliedResetVersion = 0;
 
     // [0..5] = cuerdas físicas [1..6]
     std::array<std::array<int, kMaxFrets>, kStringCount> mMfMap{};
@@ -212,7 +278,7 @@ private:
 
     std::atomic<int> mBpm{100};
     std::atomic<int> mStringDelayMs{13};
-    std::atomic<int> mPattern{0};
+    std::atomic<int> mPattern{2};
     std::atomic<float> mMasterVolume{0.85f};
 
     std::array<CustomRhythmEvent, kMaxCustomEvents> mCustomEvents{};

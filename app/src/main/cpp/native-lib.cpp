@@ -155,10 +155,12 @@ Java_com_example_guitarpilot_NativeAudioEngine_setCustomPattern(
     jintArray stringNumbers,
     jfloatArray velocities,
     jfloatArray spreadsMs,
+    jintArray releaseMs,
     jintArray humanizeFlags) {
 
     if (!gEngine || !ticks || !offsetsMs || !types || !targets || !layers ||
-        !stringNumbers || !velocities || !spreadsMs || !humanizeFlags) {
+        !stringNumbers || !velocities || !spreadsMs || !releaseMs ||
+        !humanizeFlags) {
         return JNI_FALSE;
     }
 
@@ -174,6 +176,7 @@ Java_com_example_guitarpilot_NativeAudioEngine_setCustomPattern(
         env->GetArrayLength(stringNumbers) != count ||
         env->GetArrayLength(velocities) != count ||
         env->GetArrayLength(spreadsMs) != count ||
+        env->GetArrayLength(releaseMs) != count ||
         env->GetArrayLength(humanizeFlags) != count) {
         return JNI_FALSE;
     }
@@ -186,6 +189,7 @@ Java_com_example_guitarpilot_NativeAudioEngine_setCustomPattern(
     jint* pStrings = env->GetIntArrayElements(stringNumbers, nullptr);
     jfloat* pVelocities = env->GetFloatArrayElements(velocities, nullptr);
     jfloat* pSpreads = env->GetFloatArrayElements(spreadsMs, nullptr);
+    jint* pReleaseMs = env->GetIntArrayElements(releaseMs, nullptr);
     jint* pHumanize = env->GetIntArrayElements(humanizeFlags, nullptr);
 
     const bool ok = gEngine->setCustomPattern(
@@ -198,6 +202,7 @@ Java_com_example_guitarpilot_NativeAudioEngine_setCustomPattern(
         reinterpret_cast<int*>(pStrings),
         reinterpret_cast<float*>(pVelocities),
         reinterpret_cast<float*>(pSpreads),
+        reinterpret_cast<int*>(pReleaseMs),
         reinterpret_cast<int*>(pHumanize),
         count);
 
@@ -209,6 +214,7 @@ Java_com_example_guitarpilot_NativeAudioEngine_setCustomPattern(
     env->ReleaseIntArrayElements(stringNumbers, pStrings, JNI_ABORT);
     env->ReleaseFloatArrayElements(velocities, pVelocities, JNI_ABORT);
     env->ReleaseFloatArrayElements(spreadsMs, pSpreads, JNI_ABORT);
+    env->ReleaseIntArrayElements(releaseMs, pReleaseMs, JNI_ABORT);
     env->ReleaseIntArrayElements(humanizeFlags, pHumanize, JNI_ABORT);
 
     return ok ? JNI_TRUE : JNI_FALSE;

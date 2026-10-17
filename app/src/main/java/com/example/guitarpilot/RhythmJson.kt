@@ -10,6 +10,7 @@ data class RhythmEventDef(
     var target: String = "ALL_ALLOWED",
     var velocity: Float = 0.8f,
     var spreadMs: Float = 13f,
+    var releaseMs: Int = 20,
     var layer: String = "MF",
     var humanize: Boolean = false,
     var stringNumber: Int = 1
@@ -38,7 +39,8 @@ object RhythmJsonCodec {
         "STRUM_UP",
         "ROOT_BASS",
         "ALT_BASS",
-        "PLUCK_STRING"
+        "PLUCK_STRING",
+        "RELEASE_TARGET"
     )
 
     private val validTargets = setOf(
@@ -107,6 +109,11 @@ object RhythmJsonCodec {
                 "Evento ${i + 1}: spreadMs debe estar entre 0 y 60"
             }
 
+            val releaseMs = e.optInt("releaseMs", 20)
+            require(releaseMs in 1..250) {
+                "Evento ${i + 1}: releaseMs debe estar entre 1 y 250"
+            }
+
             val layer = e.optString("layer", "MF").uppercase()
             require(layer == "MF" || layer == "PALM_MUTE") {
                 "Evento ${i + 1}: layer debe ser MF o PALM_MUTE"
@@ -124,6 +131,7 @@ object RhythmJsonCodec {
                 target = target,
                 velocity = velocity,
                 spreadMs = spreadMs,
+                releaseMs = releaseMs,
                 layer = layer,
                 humanize = e.optBoolean("humanize", false),
                 stringNumber = stringNumber
@@ -162,6 +170,7 @@ object RhythmJsonCodec {
             e.put("target", event.target)
             e.put("velocity", event.velocity.toDouble())
             e.put("spreadMs", event.spreadMs.toDouble())
+            e.put("releaseMs", event.releaseMs)
             e.put("layer", event.layer)
             e.put("humanize", event.humanize)
             if (event.type == "PLUCK_STRING") {
@@ -185,6 +194,7 @@ object RhythmJsonCodec {
         val strings = IntArray(size)
         val velocities = FloatArray(size)
         val spreads = FloatArray(size)
+        val releases = IntArray(size)
         val humanize = IntArray(size)
 
         definition.events.forEachIndexed { i, event ->
@@ -196,6 +206,7 @@ object RhythmJsonCodec {
                 "ROOT_BASS" -> 2
                 "ALT_BASS" -> 3
                 "PLUCK_STRING" -> 4
+                "RELEASE_TARGET" -> 5
                 else -> error("Tipo no soportado: ${event.type}")
             }
 
@@ -212,6 +223,7 @@ object RhythmJsonCodec {
             strings[i] = event.stringNumber
             velocities[i] = event.velocity
             spreads[i] = event.spreadMs
+            releases[i] = event.releaseMs
             humanize[i] = if (event.humanize) 1 else 0
         }
 
@@ -227,6 +239,7 @@ object RhythmJsonCodec {
             stringNumbers = strings,
             velocities = velocities,
             spreadsMs = spreads,
+            releaseMs = releases,
             humanizeFlags = humanize
         )
 

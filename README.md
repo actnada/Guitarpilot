@@ -648,3 +648,9 @@ Interpretación:
   configuración de uso de audio o procesamiento del dispositivo.
 
 No se modificaron ni normalizaron los WAV.
+
+## Banco de audio Emily
+
+Los 323 WAV originales de `Emilyguitar` se incluyen en `app/src/main/res/raw` sin renombrar ni convertir. Se retiraron los 252 WAV del banco anterior. La licencia CC0, el readme y los mapas SFZ de referencia se conservan en `app/src/main/assets/emily`; los SFZ son documentación y no se ejecutan en Android.
+
+El motor actual carga la dinámica `mf`, toma `rr1`, y cubre sus 118 posiciones de cuerda/traste siguiendo los rangos de `emily_basic.sfz`. Ajusta el tono mediante la velocidad de reproducción y convierte PCM24 a PCM16 en memoria. Las demás dinámicas, tomas, liberaciones y ruidos están incluidos, pero aún no se disparan. Emily no trae muestras Palm Mute dedicadas: esos eventos usan el respaldo de notas MF del motor.

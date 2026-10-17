@@ -69,7 +69,7 @@ class RhythmEditorActivity : AppCompatActivity() {
         NativeAudioEngine.pause()
 
         val defaultJson = assets
-            .open("rhythms/zonas_human.json")
+            .open("rhythms/balada_02.json")
             .bufferedReader()
             .use { it.readText() }
 

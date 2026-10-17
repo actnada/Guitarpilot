@@ -199,7 +199,7 @@
                 android:layout_width="0dp"
                 android:layout_height="58dp"
                 android:layout_weight="1"
-                android:text="★ ZONAS HUMAN" />
+                android:text="★ BALADA 02" />
 
             <Button
                 android:id="@+id/btnQuickPattern2"
@@ -213,7 +213,7 @@
             android:id="@+id/txtPattern"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Pop/Rock · MF"
+            android:text="PIMAMI"
             android:textColor="#C7CAD1"
             android:textSize="16sp"
             android:gravity="center"
