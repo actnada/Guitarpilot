@@ -1,0 +1,141 @@
+{
+  "schemaVersion": 1,
+  "id": "ample_pop_06",
+  "name": "Pop 6",
+  "category": "Pop",
+  "defaultBpm": 100,
+  "timeSignature": "4/4",
+  "ticksPerBar": 16,
+  "events": [
+    {
+      "tick": 0,
+      "offsetMs": 0,
+      "type": "STRUM_DOWN",
+      "target": "ALL_ALLOWED",
+      "velocity": 0.855,
+      "spreadMs": 34,
+      "layer": "MF",
+      "humanize": true
+    },
+    {
+      "tick": 2,
+      "offsetMs": 0,
+      "type": "STRUM_DOWN",
+      "target": "TREBLE_4",
+      "velocity": 0.752,
+      "spreadMs": 24,
+      "layer": "MF",
+      "humanize": true
+    },
+    {
+      "tick": 3,
+      "offsetMs": 0,
+      "type": "STRUM_UP",
+      "target": "TREBLE_3",
+      "velocity": 0.417,
+      "spreadMs": 16,
+      "layer": "MF",
+      "humanize": true
+    },
+    {
+      "tick": 4,
+      "offsetMs": 0,
+      "type": "STRUM_DOWN",
+      "target": "ALL_ALLOWED",
+      "velocity": 0.646,
+      "spreadMs": 34,
+      "layer": "MF",
+      "humanize": true
+    },
+    {
+      "tick": 5,
+      "offsetMs": 0,
+      "type": "STRUM_UP",
+      "target": "TREBLE_3",
+      "velocity": 0.591,
+      "spreadMs": 16,
+      "layer": "MF",
+      "humanize": true
+    },
+    {
+      "tick": 6,
+      "offsetMs": 0,
+      "type": "STRUM_DOWN",
+      "target": "TREBLE_4",
+      "velocity": 0.804,
+      "spreadMs": 24,
+      "layer": "MF",
+      "humanize": true
+    },
+    {
+      "tick": 9,
+      "offsetMs": 0,
+      "type": "STRUM_UP",
+      "target": "TREBLE_3",
+      "velocity": 0.535,
+      "spreadMs": 16,
+      "layer": "MF",
+      "humanize": true
+    },
+    {
+      "tick": 10,
+      "offsetMs": 0,
+      "type": "STRUM_DOWN",
+      "target": "TREBLE_4",
+      "velocity": 0.7,
+      "spreadMs": 24,
+      "layer": "MF",
+      "humanize": true
+    },
+    {
+      "tick": 11,
+      "offsetMs": 0,
+      "type": "STRUM_UP",
+      "target": "TREBLE_3",
+      "velocity": 0.7,
+      "spreadMs": 16,
+      "layer": "MF",
+      "humanize": true
+    },
+    {
+      "tick": 12,
+      "offsetMs": 0,
+      "type": "STRUM_DOWN",
+      "target": "ALL_ALLOWED",
+      "velocity": 0.855,
+      "spreadMs": 34,
+      "layer": "MF",
+      "humanize": true
+    },
+    {
+      "tick": 13,
+      "offsetMs": 0,
+      "type": "STRUM_UP",
+      "target": "TREBLE_3",
+      "velocity": 0.7,
+      "spreadMs": 16,
+      "layer": "MF",
+      "humanize": true
+    },
+    {
+      "tick": 14,
+      "offsetMs": 0,
+      "type": "STRUM_DOWN",
+      "target": "TREBLE_4",
+      "velocity": 0.752,
+      "spreadMs": 24,
+      "layer": "MF",
+      "humanize": true
+    },
+    {
+      "tick": 15,
+      "offsetMs": 0,
+      "type": "STRUM_UP",
+      "target": "TREBLE_3",
+      "velocity": 0.417,
+      "spreadMs": 16,
+      "layer": "MF",
+      "humanize": true
+    }
+  ]
+}
