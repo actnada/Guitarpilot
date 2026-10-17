@@ -30,7 +30,8 @@ public:
         BASS_3,
         TREBLE_3,
         TREBLE_4,
-        ROOT_BASS
+        ROOT_BASS,
+        STRING_MASK // Máscara de seis bits en el parámetro stringNumbers
     };
 
     enum CustomEventType {
@@ -120,6 +121,7 @@ private:
         StringTarget target = ALL_ALLOWED;
         int layer = MF;
         int stringNumber = 1;
+        uint8_t stringMask = 0; // bit 0: cuerda 1; bit 5: cuerda 6
         float velocity = 0.8f;
         float spreadMs = 13.0f;
         int releaseMs = 20;
@@ -210,7 +212,8 @@ private:
     void triggerTargetStrum(bool down, int64_t startFrame,
                             float velocity, StringTarget target,
                             int preferredLayer = MF,
-                            double totalSpreadMs = 20.0);
+                            double totalSpreadMs = 20.0,
+                            uint8_t stringMask = 0);
 
     // Laboratorio de humanización inspirado en las ideas observadas en
     // bibliotecas SFZ: variación de micro-timing, spread y ganancia,
@@ -218,7 +221,8 @@ private:
     void triggerHumanizedTargetStrum(bool down, int64_t startFrame,
                                      float velocity, StringTarget target,
                                      int preferredLayer = MF,
-                                     double baseTotalSpreadMs = 20.0);
+                                     double baseTotalSpreadMs = 20.0,
+                                     uint8_t stringMask = 0);
 
     uint32_t nextHumanRandom();
     float nextHumanUnit();

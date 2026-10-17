@@ -22,6 +22,14 @@ struct GuitarEngineTestAccess {
     static bool custom(const GuitarEngine& e) { return e.mCustomPatternActive.load(); }
     static int count(const GuitarEngine& e) { return e.mCustomEventCount.load(); }
     static float velocity(const GuitarEngine& e) { return e.mCustomEvents[0].velocity; }
+    static uint8_t stringMask(const GuitarEngine& e) { return e.mCustomEvents[0].stringMask; }
+    static std::vector<int> pendingStrings(const GuitarEngine& e) {
+        std::vector<int> result;
+        for (int i = 0; i < e.mPendingAttackCount; ++i)
+            result.push_back(e.mPendingAttacks[i].physicalString);
+        std::sort(result.begin(), result.end());
+        return result;
+    }
     static void triggerCustomEvent(GuitarEngine& e, int tick, int64_t frame) {
         e.triggerCustomPatternEvent(tick, frame);
     }
@@ -192,6 +200,33 @@ static void customPatternCopiesInputAndLatestState() {
     check(GuitarEngineTestAccess::next(f.engine)==2880, "play retains 60 ms lead-in");
 }
 
+static void maskedStrumSupportsFourBarTicksAndExactStrings() {
+    Fixture f;
+    // Acorde OPEN: seis cuerdas permitidas; cargamos muestras reales por cuerda.
+    std::vector<int16_t> pcm(2048, 8192);
+    for (int physical = 2; physical <= 6; ++physical) {
+        f.engine.loadSample(physical, physical, 0, GuitarEngine::MF,
+                            pcm.data(), int(pcm.size()), 48000);
+    }
+
+    int tick=63, offset=0, type=GuitarEngine::EVENT_STRUM_UP;
+    int target=GuitarEngine::STRING_MASK, layer=GuitarEngine::MF;
+    int mask=(1 << 5) | (1 << 2) | (1 << 0), release=20, human=0;
+    float velocity=.65f, spread=15;
+    check(f.engine.setCustomPattern(64,&tick,&offset,&type,&target,&layer,
+                                    &mask,&velocity,&spread,&release,&human,1),
+          "64-tick multi-bar pattern accepted");
+    mask = 63; // La entrada JNI puede cambiar inmediatamente después.
+    GuitarEngineTestAccess::apply(f.engine);
+    check(GuitarEngineTestAccess::stringMask(f.engine) == 37,
+          "engine keeps an independent six-bit mask");
+    GuitarEngineTestAccess::triggerCustomEvent(f.engine, 63,
+        GuitarEngineTestAccess::frame(f.engine) + 120);
+    check(GuitarEngineTestAccess::pendingStrings(f.engine) ==
+          std::vector<int>({1, 3, 6}),
+          "masked upstrum only schedules the explicitly selected strings");
+}
+
 static void pendingCapacityIsBounded() {
     Fixture f;
     for (int i=0; i<GuitarEngine::kMaxPendingAttacks+20; ++i) f.schedule(0,100+i);
@@ -238,6 +273,7 @@ int main() {
     controlChangesApplyOnAudioThread();
     customPatternCopiesInputAndLatestState();
     pendingCapacityIsBounded();
+    maskedStrumSupportsFourBarTicksAndExactStrings();
     concurrentSnapshotsAreCoherent();
-    std::cout << "PASS: 11 native regressions (real engine PCM + concurrent control snapshots)\n";
+    std::cout << "PASS: 12 native regressions (real engine PCM + concurrent control snapshots)\n";
 }

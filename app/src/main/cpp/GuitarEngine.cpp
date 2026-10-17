@@ -158,9 +158,15 @@ bool GuitarEngine::setCustomPattern(
             event.target = static_cast<StringTarget>(
                 std::clamp(targets[i],
                     static_cast<int>(ALL_ALLOWED),
-                    static_cast<int>(ROOT_BASS)));
+                    static_cast<int>(STRING_MASK)));
             event.layer = (layers[i] == PALM_MUTE) ? PALM_MUTE : MF;
-            event.stringNumber = std::clamp(stringNumbers[i], 1, 6);
+            if (event.target == STRING_MASK &&
+                (event.type == EVENT_STRUM_DOWN || event.type == EVENT_STRUM_UP)) {
+                event.stringMask = static_cast<uint8_t>(
+                    std::clamp(stringNumbers[i], 1, 63));
+            } else {
+                event.stringNumber = std::clamp(stringNumbers[i], 1, 6);
+            }
             event.velocity = std::clamp(velocities[i], 0.0f, 1.0f);
             event.spreadMs = std::clamp(spreadsMs[i], 0.0f, 60.0f);
             event.releaseMs = std::clamp(releaseMs[i], 1, 250);
@@ -416,6 +422,7 @@ void GuitarEngine::releaseTargetStrings(StringTarget target, int fadeMs) {
                 targetAllows = physicalString <= 4;
                 break;
             case ROOT_BASS:
+            case STRING_MASK:
                 break;
         }
 
@@ -606,7 +613,8 @@ void GuitarEngine::triggerTargetStrum(
     float velocity,
     StringTarget target,
     int preferredLayer,
-    double totalSpreadMs) {
+    double totalSpreadMs,
+    uint8_t stringMask) {
 
     const auto& chord =
         mChords[std::clamp(mAppliedChord, 0, kChordCount - 1)];
@@ -656,6 +664,9 @@ void GuitarEngine::triggerTargetStrum(
                 break;
             case ROOT_BASS:
                 // Resuelto arriba.
+                break;
+            case STRING_MASK:
+                targetAllows = (stringMask & (1u << (physicalString - 1))) != 0;
                 break;
         }
 
@@ -717,7 +728,8 @@ void GuitarEngine::triggerHumanizedTargetStrum(
     float velocity,
     StringTarget target,
     int preferredLayer,
-    double baseTotalSpreadMs) {
+    double baseTotalSpreadMs,
+    uint8_t stringMask) {
 
     const auto& chord =
         mChords[std::clamp(mAppliedChord, 0, kChordCount - 1)];
@@ -778,6 +790,9 @@ void GuitarEngine::triggerHumanizedTargetStrum(
                 targetAllows = physicalString <= 4;
                 break;
             case ROOT_BASS:
+                break;
+            case STRING_MASK:
+                targetAllows = (stringMask & (1u << (physicalString - 1))) != 0;
                 break;
         }
 
@@ -966,11 +981,13 @@ void GuitarEngine::triggerCustomPatternEvent(
                 if (event.humanize) {
                     triggerHumanizedTargetStrum(
                         down, eventFrame, event.velocity,
-                        event.target, event.layer, event.spreadMs);
+                        event.target, event.layer, event.spreadMs,
+                        event.stringMask);
                 } else {
                     triggerTargetStrum(
                         down, eventFrame, event.velocity,
-                        event.target, event.layer, event.spreadMs);
+                        event.target, event.layer, event.spreadMs,
+                        event.stringMask);
                 }
                 break;
             }

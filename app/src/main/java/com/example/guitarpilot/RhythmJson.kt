@@ -13,7 +13,8 @@ data class RhythmEventDef(
     var releaseMs: Int = 20,
     var layer: String = "MF",
     var humanize: Boolean = false,
-    var stringNumber: Int = 1
+    var stringNumber: Int = 1,
+    var strings: List<Int>? = null // null = comportamiento previo basado en target
 )
 
 data class RhythmDefinition(
@@ -124,6 +125,22 @@ object RhythmJsonCodec {
                 "Evento ${i + 1}: stringNumber debe estar entre 1 y 6"
             }
 
+            val selectedStrings = if (e.has("strings")) {
+                require(type == "STRUM_DOWN" || type == "STRUM_UP") {
+                    "Evento ${i + 1}: strings solo es válido en rasgueos"
+                }
+                val selected = e.getJSONArray("strings")
+                require(selected.length() in 1..6) {
+                    "Evento ${i + 1}: strings debe tener entre 1 y 6 cuerdas"
+                }
+                val physical = (0 until selected.length()).map { selected.getInt(it) }
+                require(physical.all { it in 1..6 } &&
+                        physical.toSet().size == physical.size) {
+                    "Evento ${i + 1}: strings contiene una cuerda fuera de rango o repetida"
+                }
+                physical
+            } else null
+
             events += RhythmEventDef(
                 tick = tick,
                 offsetMs = offsetMs,
@@ -134,7 +151,8 @@ object RhythmJsonCodec {
                 releaseMs = releaseMs,
                 layer = layer,
                 humanize = e.optBoolean("humanize", false),
-                stringNumber = stringNumber
+                stringNumber = stringNumber,
+                strings = selectedStrings
             )
         }
 
@@ -176,6 +194,11 @@ object RhythmJsonCodec {
             if (event.type == "PLUCK_STRING") {
                 e.put("stringNumber", event.stringNumber)
             }
+            event.strings?.let { selected ->
+                e.put("strings", JSONArray().apply {
+                    selected.forEach { put(it) }
+                })
+            }
             array.put(e)
         }
 
@@ -210,7 +233,9 @@ object RhythmJsonCodec {
                 else -> error("Tipo no soportado: ${event.type}")
             }
 
-            targets[i] = when (event.target) {
+            // STRING_MASK = 5 en el motor C++. Reutilizamos stringNumbers
+            // como máscara de seis bits solamente en este caso.
+            targets[i] = if (event.strings != null) 5 else when (event.target) {
                 "ALL_ALLOWED" -> 0
                 "BASS_3" -> 1
                 "TREBLE_3" -> 2
@@ -220,7 +245,9 @@ object RhythmJsonCodec {
             }
 
             layers[i] = if (event.layer == "PALM_MUTE") 1 else 0
-            strings[i] = event.stringNumber
+            strings[i] = event.strings?.fold(0) { mask, physical ->
+                mask or (1 shl (physical - 1))
+            } ?: event.stringNumber
             velocities[i] = event.velocity
             spreads[i] = event.spreadMs
             releases[i] = event.releaseMs

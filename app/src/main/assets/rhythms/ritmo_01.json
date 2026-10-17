@@ -1,0 +1,730 @@
+{
+  "schemaVersion": 1,
+  "id": "ritmo_01",
+  "name": "Ritmo 1",
+  "category": "Ritmo",
+  "defaultBpm": 90,
+  "timeSignature": "4/4",
+  "ticksPerBar": 64,
+  "events": [
+    {
+      "tick": 0,
+      "type": "STRUM_DOWN",
+      "target": "ALL_ALLOWED",
+      "strings": [
+        6,
+        5,
+        4,
+        3
+      ],
+      "velocity": 0.63,
+      "spreadMs": 15,
+      "layer": "MF",
+      "offsetMs": 0,
+      "humanize": false
+    },
+    {
+      "tick": 2,
+      "type": "STRUM_DOWN",
+      "target": "ALL_ALLOWED",
+      "strings": [
+        4,
+        3,
+        2
+      ],
+      "velocity": 0.236,
+      "spreadMs": 15,
+      "layer": "MF",
+      "offsetMs": 0,
+      "humanize": false
+    },
+    {
+      "tick": 3,
+      "type": "STRUM_UP",
+      "target": "ALL_ALLOWED",
+      "strings": [
+        3,
+        2,
+        1
+      ],
+      "velocity": 0.472,
+      "spreadMs": 15,
+      "layer": "MF",
+      "offsetMs": 0,
+      "humanize": false
+    },
+    {
+      "tick": 4,
+      "type": "STRUM_DOWN",
+      "target": "ALL_ALLOWED",
+      "strings": [
+        5,
+        4,
+        3,
+        2
+      ],
+      "velocity": 0.709,
+      "spreadMs": 15,
+      "layer": "MF",
+      "offsetMs": 0,
+      "humanize": false
+    },
+    {
+      "tick": 7,
+      "type": "STRUM_UP",
+      "target": "ALL_ALLOWED",
+      "strings": [
+        4,
+        3,
+        2,
+        1
+      ],
+      "velocity": 0.551,
+      "spreadMs": 15,
+      "layer": "MF",
+      "offsetMs": 0,
+      "humanize": false
+    },
+    {
+      "tick": 9,
+      "type": "STRUM_UP",
+      "target": "ALL_ALLOWED",
+      "strings": [
+        4,
+        3,
+        2
+      ],
+      "velocity": 0.236,
+      "spreadMs": 15,
+      "layer": "MF",
+      "offsetMs": 0,
+      "humanize": false
+    },
+    {
+      "tick": 10,
+      "type": "STRUM_DOWN",
+      "target": "ALL_ALLOWED",
+      "strings": [
+        5,
+        4,
+        3,
+        2
+      ],
+      "velocity": 0.63,
+      "spreadMs": 15,
+      "layer": "MF",
+      "offsetMs": 0,
+      "humanize": false
+    },
+    {
+      "tick": 12,
+      "type": "STRUM_DOWN",
+      "target": "ALL_ALLOWED",
+      "strings": [
+        4,
+        3,
+        2
+      ],
+      "velocity": 0.236,
+      "spreadMs": 15,
+      "layer": "MF",
+      "offsetMs": 0,
+      "humanize": false
+    },
+    {
+      "tick": 13,
+      "type": "STRUM_UP",
+      "target": "ALL_ALLOWED",
+      "strings": [
+        4,
+        3,
+        2,
+        1
+      ],
+      "velocity": 0.63,
+      "spreadMs": 15,
+      "layer": "MF",
+      "offsetMs": 0,
+      "humanize": false
+    },
+    {
+      "tick": 14,
+      "type": "STRUM_DOWN",
+      "target": "ALL_ALLOWED",
+      "strings": [
+        4,
+        3,
+        2
+      ],
+      "velocity": 0.472,
+      "spreadMs": 15,
+      "layer": "MF",
+      "offsetMs": 0,
+      "humanize": false
+    },
+    {
+      "tick": 15,
+      "type": "STRUM_UP",
+      "target": "ALL_ALLOWED",
+      "strings": [
+        3,
+        2,
+        1
+      ],
+      "velocity": 0.472,
+      "spreadMs": 15,
+      "layer": "PALM_MUTE",
+      "offsetMs": 0,
+      "humanize": false
+    },
+    {
+      "tick": 16,
+      "type": "STRUM_DOWN",
+      "target": "ALL_ALLOWED",
+      "strings": [
+        6,
+        5,
+        4,
+        3,
+        2
+      ],
+      "velocity": 0.63,
+      "spreadMs": 15,
+      "layer": "MF",
+      "offsetMs": 0,
+      "humanize": false
+    },
+    {
+      "tick": 18,
+      "type": "STRUM_DOWN",
+      "target": "ALL_ALLOWED",
+      "strings": [
+        6,
+        4,
+        3,
+        2
+      ],
+      "velocity": 0.236,
+      "spreadMs": 15,
+      "layer": "MF",
+      "offsetMs": 0,
+      "humanize": false
+    },
+    {
+      "tick": 19,
+      "type": "STRUM_UP",
+      "target": "ALL_ALLOWED",
+      "strings": [
+        6,
+        4,
+        3,
+        2
+      ],
+      "velocity": 0.236,
+      "spreadMs": 15,
+      "layer": "MF",
+      "offsetMs": 0,
+      "humanize": false
+    },
+    {
+      "tick": 20,
+      "type": "STRUM_DOWN",
+      "target": "ALL_ALLOWED",
+      "strings": [
+        6,
+        5,
+        4,
+        3,
+        2
+      ],
+      "velocity": 0.709,
+      "spreadMs": 15,
+      "layer": "MF",
+      "offsetMs": 0,
+      "humanize": false
+    },
+    {
+      "tick": 23,
+      "type": "STRUM_UP",
+      "target": "ALL_ALLOWED",
+      "strings": [
+        6,
+        3,
+        2,
+        1
+      ],
+      "velocity": 0.472,
+      "spreadMs": 15,
+      "layer": "MF",
+      "offsetMs": 0,
+      "humanize": false
+    },
+    {
+      "tick": 25,
+      "type": "STRUM_UP",
+      "target": "ALL_ALLOWED",
+      "strings": [
+        6,
+        3,
+        2,
+        1
+      ],
+      "velocity": 0.472,
+      "spreadMs": 15,
+      "layer": "MF",
+      "offsetMs": 0,
+      "humanize": false
+    },
+    {
+      "tick": 26,
+      "type": "STRUM_DOWN",
+      "target": "ALL_ALLOWED",
+      "strings": [
+        6,
+        5,
+        4,
+        3,
+        2
+      ],
+      "velocity": 0.63,
+      "spreadMs": 15,
+      "layer": "MF",
+      "offsetMs": 0,
+      "humanize": false
+    },
+    {
+      "tick": 28,
+      "type": "STRUM_DOWN",
+      "target": "ALL_ALLOWED",
+      "strings": [
+        6,
+        4,
+        3,
+        2
+      ],
+      "velocity": 0.236,
+      "spreadMs": 15,
+      "layer": "MF",
+      "offsetMs": 0,
+      "humanize": false
+    },
+    {
+      "tick": 29,
+      "type": "STRUM_UP",
+      "target": "ALL_ALLOWED",
+      "strings": [
+        6,
+        4,
+        3,
+        2,
+        1
+      ],
+      "velocity": 0.551,
+      "spreadMs": 15,
+      "layer": "MF",
+      "offsetMs": 0,
+      "humanize": false
+    },
+    {
+      "tick": 30,
+      "type": "STRUM_DOWN",
+      "target": "ALL_ALLOWED",
+      "strings": [
+        6,
+        4,
+        3,
+        2
+      ],
+      "velocity": 0.472,
+      "spreadMs": 15,
+      "layer": "MF",
+      "offsetMs": 0,
+      "humanize": false
+    },
+    {
+      "tick": 31,
+      "type": "RELEASE_TARGET",
+      "target": "ALL_ALLOWED",
+      "releaseMs": 20,
+      "offsetMs": 0,
+      "velocity": 0.472
+    },
+    {
+      "tick": 32,
+      "type": "STRUM_DOWN",
+      "target": "ALL_ALLOWED",
+      "strings": [
+        6,
+        5,
+        4,
+        3
+      ],
+      "velocity": 0.63,
+      "spreadMs": 15,
+      "layer": "MF",
+      "offsetMs": 0,
+      "humanize": false
+    },
+    {
+      "tick": 34,
+      "type": "STRUM_DOWN",
+      "target": "ALL_ALLOWED",
+      "strings": [
+        4,
+        3,
+        2
+      ],
+      "velocity": 0.236,
+      "spreadMs": 15,
+      "layer": "MF",
+      "offsetMs": 0,
+      "humanize": false
+    },
+    {
+      "tick": 35,
+      "type": "STRUM_UP",
+      "target": "ALL_ALLOWED",
+      "strings": [
+        3,
+        2,
+        1
+      ],
+      "velocity": 0.472,
+      "spreadMs": 15,
+      "layer": "MF",
+      "offsetMs": 0,
+      "humanize": false
+    },
+    {
+      "tick": 36,
+      "type": "STRUM_DOWN",
+      "target": "ALL_ALLOWED",
+      "strings": [
+        4,
+        3,
+        2,
+        1
+      ],
+      "velocity": 0.709,
+      "spreadMs": 15,
+      "layer": "MF",
+      "offsetMs": 0,
+      "humanize": false
+    },
+    {
+      "tick": 39,
+      "type": "STRUM_UP",
+      "target": "ALL_ALLOWED",
+      "strings": [
+        4,
+        3,
+        2,
+        1
+      ],
+      "velocity": 0.551,
+      "spreadMs": 15,
+      "layer": "MF",
+      "offsetMs": 0,
+      "humanize": false
+    },
+    {
+      "tick": 41,
+      "type": "STRUM_UP",
+      "target": "ALL_ALLOWED",
+      "strings": [
+        4,
+        3,
+        2
+      ],
+      "velocity": 0.236,
+      "spreadMs": 15,
+      "layer": "MF",
+      "offsetMs": 0,
+      "humanize": false
+    },
+    {
+      "tick": 42,
+      "type": "STRUM_DOWN",
+      "target": "ALL_ALLOWED",
+      "strings": [
+        4,
+        3,
+        2
+      ],
+      "velocity": 0.63,
+      "spreadMs": 15,
+      "layer": "MF",
+      "offsetMs": 0,
+      "humanize": false
+    },
+    {
+      "tick": 44,
+      "type": "STRUM_DOWN",
+      "target": "ALL_ALLOWED",
+      "strings": [
+        4,
+        3,
+        2
+      ],
+      "velocity": 0.236,
+      "spreadMs": 15,
+      "layer": "MF",
+      "offsetMs": 0,
+      "humanize": false
+    },
+    {
+      "tick": 45,
+      "type": "STRUM_UP",
+      "target": "ALL_ALLOWED",
+      "strings": [
+        4,
+        3,
+        2,
+        1
+      ],
+      "velocity": 0.63,
+      "spreadMs": 15,
+      "layer": "MF",
+      "offsetMs": 0,
+      "humanize": false
+    },
+    {
+      "tick": 46,
+      "type": "STRUM_DOWN",
+      "target": "ALL_ALLOWED",
+      "strings": [
+        4,
+        3,
+        2
+      ],
+      "velocity": 0.472,
+      "spreadMs": 15,
+      "layer": "MF",
+      "offsetMs": 0,
+      "humanize": false
+    },
+    {
+      "tick": 47,
+      "type": "STRUM_UP",
+      "target": "ALL_ALLOWED",
+      "strings": [
+        3,
+        2,
+        1
+      ],
+      "velocity": 0.472,
+      "spreadMs": 15,
+      "layer": "PALM_MUTE",
+      "offsetMs": 0,
+      "humanize": false
+    },
+    {
+      "tick": 48,
+      "type": "STRUM_DOWN",
+      "target": "ALL_ALLOWED",
+      "strings": [
+        6,
+        5,
+        4,
+        3,
+        2,
+        1
+      ],
+      "velocity": 0.63,
+      "spreadMs": 15,
+      "layer": "MF",
+      "offsetMs": 0,
+      "humanize": false
+    },
+    {
+      "tick": 50,
+      "type": "STRUM_DOWN",
+      "target": "ALL_ALLOWED",
+      "strings": [
+        6,
+        5,
+        4,
+        3,
+        2
+      ],
+      "velocity": 0.236,
+      "spreadMs": 15,
+      "layer": "MF",
+      "offsetMs": 0,
+      "humanize": false
+    },
+    {
+      "tick": 51,
+      "type": "STRUM_UP",
+      "target": "ALL_ALLOWED",
+      "strings": [
+        6,
+        5,
+        3,
+        2,
+        1
+      ],
+      "velocity": 0.236,
+      "spreadMs": 15,
+      "layer": "MF",
+      "offsetMs": 0,
+      "humanize": false
+    },
+    {
+      "tick": 52,
+      "type": "STRUM_DOWN",
+      "target": "ALL_ALLOWED",
+      "strings": [
+        6,
+        5,
+        4,
+        3,
+        2,
+        1
+      ],
+      "velocity": 0.709,
+      "spreadMs": 15,
+      "layer": "MF",
+      "offsetMs": 0,
+      "humanize": false
+    },
+    {
+      "tick": 54,
+      "type": "STRUM_UP",
+      "target": "ALL_ALLOWED",
+      "strings": [
+        6,
+        5,
+        3,
+        2,
+        1
+      ],
+      "velocity": 0.236,
+      "spreadMs": 15,
+      "layer": "MF",
+      "offsetMs": 0,
+      "humanize": false
+    },
+    {
+      "tick": 55,
+      "type": "STRUM_UP",
+      "target": "ALL_ALLOWED",
+      "strings": [
+        6,
+        5,
+        3,
+        2,
+        1
+      ],
+      "velocity": 0.63,
+      "spreadMs": 15,
+      "layer": "MF",
+      "offsetMs": 0,
+      "humanize": false
+    },
+    {
+      "tick": 57,
+      "type": "STRUM_UP",
+      "target": "ALL_ALLOWED",
+      "strings": [
+        6,
+        5,
+        3,
+        2,
+        1
+      ],
+      "velocity": 0.236,
+      "spreadMs": 15,
+      "layer": "MF",
+      "offsetMs": 0,
+      "humanize": false
+    },
+    {
+      "tick": 58,
+      "type": "STRUM_DOWN",
+      "target": "ALL_ALLOWED",
+      "strings": [
+        6,
+        5,
+        4,
+        3,
+        2,
+        1
+      ],
+      "velocity": 0.709,
+      "spreadMs": 15,
+      "layer": "MF",
+      "offsetMs": 0,
+      "humanize": false
+    },
+    {
+      "tick": 60,
+      "type": "STRUM_DOWN",
+      "target": "ALL_ALLOWED",
+      "strings": [
+        6,
+        5,
+        4,
+        3,
+        2
+      ],
+      "velocity": 0.236,
+      "spreadMs": 15,
+      "layer": "MF",
+      "offsetMs": 0,
+      "humanize": false
+    },
+    {
+      "tick": 61,
+      "type": "STRUM_UP",
+      "target": "ALL_ALLOWED",
+      "strings": [
+        6,
+        5,
+        4,
+        3,
+        2,
+        1
+      ],
+      "velocity": 0.63,
+      "spreadMs": 15,
+      "layer": "MF",
+      "offsetMs": 0,
+      "humanize": false
+    },
+    {
+      "tick": 62,
+      "type": "STRUM_DOWN",
+      "target": "ALL_ALLOWED",
+      "strings": [
+        6,
+        5,
+        4,
+        3,
+        2
+      ],
+      "velocity": 0.472,
+      "spreadMs": 15,
+      "layer": "MF",
+      "offsetMs": 0,
+      "humanize": false
+    },
+    {
+      "tick": 63,
+      "type": "STRUM_UP",
+      "target": "ALL_ALLOWED",
+      "strings": [
+        6,
+        5,
+        3,
+        2,
+        1
+      ],
+      "velocity": 0.472,
+      "spreadMs": 15,
+      "layer": "MF",
+      "offsetMs": 0,
+      "humanize": false
+    }
+  ]
+}

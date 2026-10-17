@@ -20,7 +20,8 @@ object RhythmPresets {
         RhythmPreset(24, "Folk 2", "rhythms/ample_folk_02.json"),
         RhythmPreset(25, "Folk 3", "rhythms/ample_folk_03.json"),
         RhythmPreset(26, "Folk 4", "rhythms/ample_folk_04.json"),
-        RhythmPreset(27, "Folk 5", "rhythms/ample_folk_05.json")
+        RhythmPreset(27, "Folk 5", "rhythms/ample_folk_05.json"),
+        RhythmPreset(28, "Ritmo 1", "rhythms/ritmo_01.json")
     )
 
     fun find(id: Int): RhythmPreset? = entries.firstOrNull { it.id == id }
