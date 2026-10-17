@@ -13,8 +13,10 @@ android {
         applicationId = "com.example.guitarpilot2"
         minSdk = 26
         targetSdk = 37
-        versionCode = 1
-        versionName = "1.0"
+        // Incrementar versionCode en cada APK distribuido como actualización.
+        // Conservar applicationId y la misma clave de firma para no perder datos.
+        versionCode = 2
+        versionName = "1.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
