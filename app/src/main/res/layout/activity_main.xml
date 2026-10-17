@@ -221,6 +221,17 @@
             android:paddingBottom="8dp" />
 
         <TextView
+            android:id="@+id/txtPimamiStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="PIMAMI: estado del acorde en motor"
+            android:textColor="#F8D683"
+            android:textSize="12sp"
+            android:gravity="center"
+            android:paddingBottom="8dp"
+            android:visibility="gone" />
+
+        <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Tempo"

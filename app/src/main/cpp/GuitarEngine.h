@@ -54,6 +54,9 @@ public:
     void stop();
 
     void setChord(int chord);
+    // Cinco valores atómicos, legibles desde UI sin bloquear el hilo de audio:
+    // solicitado, aplicado, acorde del último P, número de P, muestra del bajo.
+    std::array<int, 5> chordDebugState() const;
     void setBpm(int bpm);
     void setStringDelayMs(int delayMs);
     void setPattern(int pattern);
@@ -277,8 +280,13 @@ private:
     // hasta el inicio del siguiente ciclo.
     std::atomic<int> mChord{0};
 
-    // Acorde que realmente está sonando ahora.
+    // La digitación aplicada solo la modifica el hilo de audio. Su espejo
+    // atómico permite comprobar el estado desde Android sin data races.
     int mAppliedChord = 0;
+    std::atomic<int> mPublishedAppliedChord{0};
+    std::atomic<int> mPimamiChordAtLastBass{-1};
+    std::atomic<int> mPimamiBassCount{0};
+    std::atomic<int> mPimamiBassSample{-1};
 
     std::atomic<int> mBpm{100};
     std::atomic<int> mStringDelayMs{13};

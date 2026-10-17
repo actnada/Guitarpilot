@@ -99,6 +99,21 @@ Java_com_example_guitarpilot_NativeAudioEngine_setChord(
     if (gEngine) gEngine->setChord(value);
 }
 
+extern "C" JNIEXPORT jintArray JNICALL
+Java_com_example_guitarpilot_NativeAudioEngine_getChordDebugState(
+    JNIEnv* env, jobject) {
+
+    std::array<int, 5> state{{-1, -1, -1, 0, -1}};
+    if (gEngine) state = gEngine->chordDebugState();
+    jintArray result = env->NewIntArray(static_cast<jsize>(state.size()));
+    if (result) {
+        env->SetIntArrayRegion(result, 0,
+                               static_cast<jsize>(state.size()),
+                               reinterpret_cast<const jint*>(state.data()));
+    }
+    return result;
+}
+
 extern "C" JNIEXPORT void JNICALL
 Java_com_example_guitarpilot_NativeAudioEngine_setBpm(
     JNIEnv*, jobject, jint value) {

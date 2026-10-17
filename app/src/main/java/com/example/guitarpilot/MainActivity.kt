@@ -2,6 +2,9 @@ package com.example.guitarpilot
 
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.view.View
 import android.widget.Button
 import android.widget.PopupMenu
 import android.widget.SeekBar
@@ -34,7 +37,16 @@ class MainActivity : AppCompatActivity() {
     private lateinit var txtDelay: TextView
     private lateinit var txtVolume: TextView
     private lateinit var txtPattern: TextView
+    private lateinit var txtPimamiStatus: TextView
     private lateinit var txtBank: TextView
+
+    private val chordMonitor = Handler(Looper.getMainLooper())
+    private val chordMonitorTick = object : Runnable {
+        override fun run() {
+            refreshPimamiStatus()
+            chordMonitor.postDelayed(this, 350L)
+        }
+    }
     private lateinit var btnPlayPause: Button
 
     // Cobertura de cuerdas y trastes del motor.
@@ -269,6 +281,7 @@ class MainActivity : AppCompatActivity() {
         txtDelay = findViewById(R.id.txtDelay)
         txtVolume = findViewById(R.id.txtVolume)
         txtPattern = findViewById(R.id.txtPattern)
+        txtPimamiStatus = findViewById(R.id.txtPimamiStatus)
         txtBank = findViewById(R.id.txtBank)
         btnPlayPause = findViewById(R.id.btnPlayPause)
 
@@ -610,6 +623,34 @@ class MainActivity : AppCompatActivity() {
         popup.show()
     }
 
+    private fun refreshPimamiStatus() {
+        if (currentPattern != 2 || !isPlaying) {
+            txtPimamiStatus.visibility = View.GONE
+            return
+        }
+        txtPimamiStatus.visibility = View.VISIBLE
+        val status = NativeAudioEngine.getChordDebugState()
+        if (status.size < 5) {
+            txtPimamiStatus.text = "PIMAMI: diagnóstico no disponible"
+            return
+        }
+        val requested = ChordSession.names.getOrNull(status[0]) ?: "?"
+        val applied = ChordSession.names.getOrNull(status[1]) ?: "?"
+        val atBass = ChordSession.names.getOrNull(status[2]) ?: "sin bajo"
+        val sampled = if (status[4] >= 0) "sample ${status[4]}"
+                      else "SIN SAMPLE DE BAJO"
+        txtPimamiStatus.text =
+            if (status[3] == 0) {
+                "PIMAMI · esperando primer P · solicitado: $requested"
+            } else if (status[0] != status[1]) {
+                "PIMAMI · solicitado: $requested · sonando: $applied · esperando P " +
+                    "(P #${status[3]})"
+            } else {
+                "PIMAMI · acorde en motor: $applied · último bajo: $atBass · " +
+                    "$sampled · P #${status[3]}"
+            }
+    }
+
     private fun updateUi() {
         txtChord.text = ChordSession.selectedName
         txtBpm.text = "$bpm BPM"
@@ -632,10 +673,13 @@ class MainActivity : AppCompatActivity() {
             } else {
                 "▶ PLAY"
             }
+        refreshPimamiStatus()
     }
 
     override fun onResume() {
         super.onResume()
+        chordMonitor.removeCallbacks(chordMonitorTick)
+        chordMonitor.post(chordMonitorTick)
 
         // El editor puede reasignar botones y cambiar el acorde mientras prueba.
         ChordSession.select(ChordSession.selectedId)
@@ -647,7 +691,13 @@ class MainActivity : AppCompatActivity() {
         updateUi()
     }
 
+    override fun onPause() {
+        chordMonitor.removeCallbacks(chordMonitorTick)
+        super.onPause()
+    }
+
     override fun onDestroy() {
+        chordMonitor.removeCallbacks(chordMonitorTick)
         // IMPORTANTE: una Activity no es dueña del motor de audio.
         // Rotación/recreación no deben destruir Oboe ni el transporte.
         // Si el usuario cierra explícitamente esta Activity con Back, sí

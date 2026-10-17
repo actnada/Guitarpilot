@@ -21,6 +21,7 @@ object NativeAudioEngine {
     external fun stop()
 
     external fun setChord(chord: Int)
+    external fun getChordDebugState(): IntArray
     external fun setBpm(bpm: Int)
     external fun setStringDelayMs(delayMs: Int)
     external fun setPattern(pattern: Int)

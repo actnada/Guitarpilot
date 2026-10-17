@@ -328,6 +328,10 @@ static void pimamiSwitchesChordAtNextPWithoutRestarting() {
           "PIMAMI must advance from P to I");
     check(GuitarEngineTestAccess::activeChord(f.engine) == 1,
           "first P of the sequence uses selected C");
+    auto info = f.engine.chordDebugState();
+    check(info[0] == 1 && info[1] == 1 && info[2] == 1 && info[3] == 1,
+          "PIMAMI first bass publishes applied C chord");
+    check(info[4] == -1, "diagnostic detects no root-bass sample in test bank");
 
     f.engine.setChord(6); // F; testing aplica el acorde nuevo en el próximo P.
     const auto beforeTick = GuitarEngineTestAccess::tick(f.engine);
@@ -335,6 +339,9 @@ static void pimamiSwitchesChordAtNextPWithoutRestarting() {
     f.render(1);
     check(GuitarEngineTestAccess::activeChord(f.engine) == 1,
           "PIMAMI pending chord must wait for next P, as in testing");
+    info = f.engine.chordDebugState();
+    check(info[0] == 6 && info[1] == 1 && info[2] == 1 && info[3] == 1,
+          "diagnostic separates selected F from active C before the next P");
     check(GuitarEngineTestAccess::tick(f.engine) == beforeTick &&
           GuitarEngineTestAccess::next(f.engine) == beforeNext,
           "selecting a chord must not move the PIMAMI clock");
@@ -364,6 +371,9 @@ static void pimamiSwitchesChordAtNextPWithoutRestarting() {
     advanceOne(); // Nuevo P: aplica el F pendiente.
     check(GuitarEngineTestAccess::activeChord(f.engine) == 6,
           "new F chord must apply at the next P");
+    info = f.engine.chordDebugState();
+    check(info[0] == 6 && info[1] == 6 && info[2] == 6 && info[3] == 2,
+          "diagnostic confirms actual F applied on second P");
     check(GuitarEngineTestAccess::tick(f.engine) == 1,
           "next cycle advances normally to I");
     advanceOne();

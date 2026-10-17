@@ -99,8 +99,19 @@ void GuitarEngine::stop() {
 }
 
 void GuitarEngine::setChord(int chord) {
-    // El hilo de audio aplicará el cambio y decidirá qué cuerdas deben apagarse.
+    // El productor solicita el acorde; PIMAMI lo adopta en el próximo P,
+    // sin adelantar la fase ni detener las colas.
     mChord.store(std::clamp(chord, 0, kChordCount - 1));
+}
+
+std::array<int, 5> GuitarEngine::chordDebugState() const {
+    return {{
+        mChord.load(std::memory_order_relaxed),
+        mPublishedAppliedChord.load(std::memory_order_relaxed),
+        mPimamiChordAtLastBass.load(std::memory_order_relaxed),
+        mPimamiBassCount.load(std::memory_order_relaxed),
+        mPimamiBassSample.load(std::memory_order_relaxed)
+    }};
 }
 
 void GuitarEngine::setBpm(int bpm) {
@@ -478,6 +489,7 @@ void GuitarEngine::applyPendingChordChange() {
     }
 
     mAppliedChord = requestedChord;
+    mPublishedAppliedChord.store(requestedChord, std::memory_order_relaxed);
 }
 
 void GuitarEngine::triggerStrum(
@@ -1224,10 +1236,21 @@ oboe::DataCallbackResult GuitarEngine::onAudioReady(
             while (mFrameCounter >= mNextTickFrame) {
 
                 if (!customPattern && mPattern.load() == 2) {
-                    // PIMAMI tiene un reloj propio.
-                    // El acorde pendiente solo se aplica antes del P.
+                    // PIMAMI conserva el cambio EXCLUSIVAMENTE en P.
+                    // Publicamos los datos del acorde y del sample elegido
+                    // para distinguir un problema de control de audio de
+                    // una muestra faltante, sin hacer logging en el callback.
                     if (mTickIndex == 0) {
                         applyPendingChordChange();
+                        const auto& chord = mChords[mAppliedChord];
+                        mPimamiChordAtLastBass.store(
+                            mAppliedChord, std::memory_order_relaxed);
+                        mPimamiBassSample.store(
+                            sampleWithFallback(
+                                chord.rootBassString, chord.rootBassFret, MF),
+                            std::memory_order_relaxed);
+                        mPimamiBassCount.fetch_add(
+                            1, std::memory_order_relaxed);
                     }
 
                     triggerPimamiEvent(
