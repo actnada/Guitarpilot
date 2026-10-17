@@ -3,6 +3,7 @@ package com.example.guitarpilot
 import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
+import android.widget.PopupMenu
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -14,6 +15,11 @@ class RhythmEditorActivity : AppCompatActivity() {
     private lateinit var txtStatus: TextView
     private lateinit var txtEvent: TextView
     private lateinit var btnTest: Button
+    private lateinit var txtChord: TextView
+    private val chordButtons = intArrayOf(
+        R.id.btnEditorChord1, R.id.btnEditorChord2, R.id.btnEditorChord3,
+        R.id.btnEditorChord4, R.id.btnEditorChord5, R.id.btnEditorChord6
+    )
 
     private var selectedEvent = 0
     private var editorPlaying = false
@@ -65,6 +71,8 @@ class RhythmEditorActivity : AppCompatActivity() {
         txtStatus = findViewById(R.id.txtEditorStatus)
         txtEvent = findViewById(R.id.txtSelectedEvent)
         btnTest = findViewById(R.id.btnEditorTest)
+        txtChord = findViewById(R.id.txtEditorChord)
+        bindChordSlots()
 
         NativeAudioEngine.pause()
 
@@ -144,6 +152,61 @@ class RhythmEditorActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * El usuario toca los acordes en vivo. Estos botones NO reproducen
+     * progresiones ni programan cambios de acorde dentro del JSON.
+     */
+    private fun bindChordSlots() {
+        chordButtons.forEachIndexed { slot, buttonId ->
+            val button = findViewById<Button>(buttonId)
+            button.setOnClickListener {
+                ChordSession.select(ChordSession.slotAt(slot))
+                updateChordControls()
+            }
+            button.setOnLongClickListener {
+                if (editorPlaying) {
+                    toast("Pausa la prueba antes de reasignar este botón")
+                } else {
+                    showChordAssignmentMenu(button, slot)
+                }
+                true
+            }
+        }
+        updateChordControls()
+    }
+
+    private fun updateChordControls() {
+        txtChord.text = "Acorde activo: ${ChordSession.selectedName}"
+        chordButtons.forEachIndexed { slot, id ->
+            findViewById<Button>(id).text =
+                ChordSession.names[ChordSession.slotAt(slot)]
+        }
+    }
+
+    private fun showChordAssignmentMenu(anchor: Button, slot: Int) {
+        val popup = PopupMenu(this, anchor)
+        popup.menu.add(0, 0, 0, "OPEN")
+        val major = popup.menu.addSubMenu("Mayores")
+        val minor = popup.menu.addSubMenu("Menores")
+        val seventh = popup.menu.addSubMenu("Séptimas")
+
+        (1..12).forEach { id ->
+            major.add(0, id, id, ChordSession.names[id])
+        }
+        (13..24).forEach { id ->
+            minor.add(0, id, id, ChordSession.names[id])
+        }
+        (25..36).forEach { id ->
+            seventh.add(0, id, id, ChordSession.names[id])
+        }
+        popup.setOnMenuItemClickListener { item ->
+            ChordSession.assign(slot, item.itemId)
+            updateChordControls()
+            true
+        }
+        popup.show()
+    }
+
     private fun applyJson(): Boolean {
         return runCatching {
             val definition = RhythmJsonCodec.parse(editJson.text.toString())
@@ -152,7 +215,8 @@ class RhythmEditorActivity : AppCompatActivity() {
             check(RhythmJsonCodec.applyToEngine(definition)) {
                 "El motor rechazó el patrón"
             }
-
+            // Aplicar/Probar un JSON no cambia el acorde del guitarrista.
+            ChordSession.select(ChordSession.selectedId)
             txtStatus.text =
                 "Cargado: ${definition.name} · ${definition.defaultBpm} BPM · " +
                 "${definition.events.size} eventos"

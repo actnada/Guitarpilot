@@ -22,6 +22,14 @@ struct GuitarEngineTestAccess {
     static bool custom(const GuitarEngine& e) { return e.mCustomPatternActive.load(); }
     static int count(const GuitarEngine& e) { return e.mCustomEventCount.load(); }
     static float velocity(const GuitarEngine& e) { return e.mCustomEvents[0].velocity; }
+    static int activeChord(const GuitarEngine& e) { return e.mAppliedChord; }
+    static std::vector<int> pendingSampleIndices(const GuitarEngine& e) {
+        std::vector<int> result;
+        for (int i = 0; i < e.mPendingAttackCount; ++i)
+            result.push_back(e.mPendingAttacks[i].sampleIndex);
+        std::sort(result.begin(), result.end());
+        return result;
+    }
     static uint8_t stringMask(const GuitarEngine& e) { return e.mCustomEvents[0].stringMask; }
     static std::vector<int> pendingStrings(const GuitarEngine& e) {
         std::vector<int> result;
@@ -227,6 +235,43 @@ static void maskedStrumSupportsFourBarTicksAndExactStrings() {
           "masked upstrum only schedules the explicitly selected strings");
 }
 
+static void customStrumUsesLatestChordWithoutRestartingRhythm() {
+    Fixture f;
+    // Grabaciones cargadas: S1 fret 0 (sample 0) y S1 fret 1 (sample 1).
+    int tick=0, offset=0, type=GuitarEngine::EVENT_STRUM_DOWN;
+    int target=GuitarEngine::TREBLE_3, layer=GuitarEngine::MF;
+    int string=1, release=20, human=0;
+    float velocity=.8f, spread=0;
+    check(f.engine.setCustomPattern(16,&tick,&offset,&type,&target,
+                                    &layer,&string,&velocity,&spread,
+                                    &release,&human,1), "custom strum accepted");
+    f.engine.setChord(1); // C: S1 = E4 abierto
+    f.engine.play();
+    f.render(1);
+    check(GuitarEngineTestAccess::activeChord(f.engine) == 1,
+          "C chord is active in the JSON accompaniment");
+
+    int64_t future = GuitarEngineTestAccess::frame(f.engine) + 100;
+    GuitarEngineTestAccess::triggerCustomEvent(f.engine, 0, future);
+    check(GuitarEngineTestAccess::pendingSampleIndices(f.engine) ==
+          std::vector<int>({0}), "C strum uses first-string fret 0");
+
+    const int tickBefore = GuitarEngineTestAccess::tick(f.engine);
+    f.engine.setChord(6); // F: S1 = F4, fret 1
+    f.render(1);
+    check(GuitarEngineTestAccess::activeChord(f.engine) == 6,
+          "F chord applies while the rhythm continues");
+    check(GuitarEngineTestAccess::tick(f.engine) == tickBefore,
+          "chord changes must not restart the pattern");
+    check(GuitarEngineTestAccess::pending(f.engine) == 0,
+          "previous chord pending attacks get cancelled");
+
+    future = GuitarEngineTestAccess::frame(f.engine) + 100;
+    GuitarEngineTestAccess::triggerCustomEvent(f.engine, 0, future);
+    check(GuitarEngineTestAccess::pendingSampleIndices(f.engine) ==
+          std::vector<int>({1}), "next strum uses F chord recording");
+}
+
 static void pendingCapacityIsBounded() {
     Fixture f;
     for (int i=0; i<GuitarEngine::kMaxPendingAttacks+20; ++i) f.schedule(0,100+i);
@@ -274,6 +319,7 @@ int main() {
     customPatternCopiesInputAndLatestState();
     pendingCapacityIsBounded();
     maskedStrumSupportsFourBarTicksAndExactStrings();
+    customStrumUsesLatestChordWithoutRestartingRhythm();
     concurrentSnapshotsAreCoherent();
-    std::cout << "PASS: 12 native regressions (real engine PCM + concurrent control snapshots)\n";
+    std::cout << "PASS: 13 native regressions (real engine PCM + concurrent control snapshots)\n";
 }

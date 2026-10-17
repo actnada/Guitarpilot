@@ -88,6 +88,73 @@
         </LinearLayout>
 
         <TextView
+            android:id="@+id/txtEditorChord"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Acorde activo: OPEN"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold"
+            android:textSize="18sp"
+            android:paddingTop="14dp"
+            android:paddingBottom="6dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Toque = cambiar acorde en vivo · mantenga = reasignar"
+            android:textColor="#C7CAD1"
+            android:textSize="12sp"
+            android:paddingBottom="4dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+            <Button
+                android:id="@+id/btnEditorChord1"
+                android:layout_width="0dp"
+                android:layout_height="54dp"
+                android:layout_weight="1"
+                android:text="C" />
+            <Button
+                android:id="@+id/btnEditorChord2"
+                android:layout_width="0dp"
+                android:layout_height="54dp"
+                android:layout_weight="1"
+                android:text="G" />
+            <Button
+                android:id="@+id/btnEditorChord3"
+                android:layout_width="0dp"
+                android:layout_height="54dp"
+                android:layout_weight="1"
+                android:text="D" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+            <Button
+                android:id="@+id/btnEditorChord4"
+                android:layout_width="0dp"
+                android:layout_height="54dp"
+                android:layout_weight="1"
+                android:text="Em" />
+            <Button
+                android:id="@+id/btnEditorChord5"
+                android:layout_width="0dp"
+                android:layout_height="54dp"
+                android:layout_weight="1"
+                android:text="Am" />
+            <Button
+                android:id="@+id/btnEditorChord6"
+                android:layout_width="0dp"
+                android:layout_height="54dp"
+                android:layout_weight="1"
+                android:text="Bm" />
+        </LinearLayout>
+
+        <TextView
             android:id="@+id/txtSelectedEvent"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

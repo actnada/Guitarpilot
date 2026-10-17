@@ -20,14 +20,8 @@ class MainActivity : AppCompatActivity() {
         // Estado de SESIÓN, no de Activity. Sobrevive a rotaciones y a
         // recreaciones de la pantalla mientras el proceso siga vivo.
         private var isPlaying = false
-        private var currentChord = "OPEN"
-        private var currentChordId = 0
-
-        // Seis accesos visibles. Toque = tocar acorde.
-        // Mantener pulsado = reasignar el botón.
-        // Valores iniciales: C, G, D, Em, Am, Bm.
-        private var chordSlots = intArrayOf(1, 8, 3, 17, 22, 24)
-
+        // Los seis accesos a acordes se comparten mediante ChordSession.
+        // Pulsación corta = seleccionar, pulsación larga = reasignar.
         private var currentPattern = 2
         private var bpm = 100
         private var stringDelayMs = 13
@@ -81,11 +75,12 @@ class MainActivity : AppCompatActivity() {
             } else {
                 NativeAudioEngine.setPattern(currentPattern)
             }
-            NativeAudioEngine.setChord(currentChordId)
         } else {
             txtBank.text = "Banco: Emily · 118 notas · sesión activa"
         }
 
+        // Selección de acorde independiente del patrón cargado.
+        ChordSession.select(ChordSession.selectedId)
         updateUi()
     }
 
@@ -468,53 +463,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private data class ChordOption(
-        val id: Int,
-        val name: String
-    )
-
-    private val chordOptions = listOf(
-        ChordOption(0, "OPEN"),
-
-        ChordOption(1, "C"),
-        ChordOption(2, "C#"),
-        ChordOption(3, "D"),
-        ChordOption(4, "D#"),
-        ChordOption(5, "E"),
-        ChordOption(6, "F"),
-        ChordOption(7, "F#"),
-        ChordOption(8, "G"),
-        ChordOption(9, "G#"),
-        ChordOption(10, "A"),
-        ChordOption(11, "A#"),
-        ChordOption(12, "B"),
-
-        ChordOption(13, "Cm"),
-        ChordOption(14, "C#m"),
-        ChordOption(15, "Dm"),
-        ChordOption(16, "D#m"),
-        ChordOption(17, "Em"),
-        ChordOption(18, "Fm"),
-        ChordOption(19, "F#m"),
-        ChordOption(20, "Gm"),
-        ChordOption(21, "G#m"),
-        ChordOption(22, "Am"),
-        ChordOption(23, "A#m"),
-        ChordOption(24, "Bm"),
-
-        ChordOption(25, "C7"),
-        ChordOption(26, "C#7"),
-        ChordOption(27, "D7"),
-        ChordOption(28, "D#7"),
-        ChordOption(29, "E7"),
-        ChordOption(30, "F7"),
-        ChordOption(31, "F#7"),
-        ChordOption(32, "G7"),
-        ChordOption(33, "G#7"),
-        ChordOption(34, "A7"),
-        ChordOption(35, "A#7"),
-        ChordOption(36, "B7")
-    )
+    private val chordOptions = ChordSession.options
 
     private val chordButtonIds = intArrayOf(
         R.id.btnChord1,
@@ -530,7 +479,7 @@ class MainActivity : AppCompatActivity() {
             val button = findViewById<Button>(buttonId)
 
             button.setOnClickListener {
-                selectChordById(chordSlots[slot])
+                selectChordById(ChordSession.slotAt(slot))
             }
 
             button.setOnLongClickListener {
@@ -578,7 +527,7 @@ class MainActivity : AppCompatActivity() {
             val chosen = chordOptions.firstOrNull { it.id == item.itemId }
                 ?: return@setOnMenuItemClickListener false
 
-            chordSlots[slot] = chosen.id
+            ChordSession.assign(slot, chosen.id)
             updateChordSlotLabels()
             true
         }
@@ -588,7 +537,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun updateChordSlotLabels() {
         chordButtonIds.forEachIndexed { slot, buttonId ->
-            val chord = chordOptions.first { it.id == chordSlots[slot] }
+            val chord = chordOptions.first { it.id == ChordSession.slotAt(slot) }
             findViewById<Button>(buttonId).text = chord.name
         }
     }
@@ -597,16 +546,9 @@ class MainActivity : AppCompatActivity() {
         val selected = chordOptions.firstOrNull { it.id == id }
             ?: chordOptions.first()
 
-        if (currentChordId == selected.id && selected.id != 0) {
-            currentChordId = 0
-            currentChord = "OPEN"
-            NativeAudioEngine.setChord(0)
-        } else {
-            currentChordId = selected.id
-            currentChord = selected.name
-            NativeAudioEngine.setChord(selected.id)
-        }
-
+        // Volver a pulsar el mismo botón mantiene ese acorde.
+        // OPEN se puede asignar explícitamente a cualquiera de los seis botones.
+        ChordSession.select(selected.id)
         updateUi()
     }
 
@@ -620,6 +562,8 @@ class MainActivity : AppCompatActivity() {
                 if (RhythmJsonCodec.applyToEngine(definition)) {
                     currentPattern = id
                     bpm = definition.defaultBpm
+                    // Cambiar el ritmo no modifica la selección de acordes.
+                    ChordSession.select(ChordSession.selectedId)
                     true
                 } else false
             }.getOrDefault(false)
@@ -637,6 +581,7 @@ class MainActivity : AppCompatActivity() {
 
         NativeAudioEngine.setBpm(bpm)
         NativeAudioEngine.setPattern(id)
+        ChordSession.select(ChordSession.selectedId)
         updateUi()
     }
 
@@ -662,7 +607,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateUi() {
-        txtChord.text = currentChord
+        txtChord.text = ChordSession.selectedName
         txtBpm.text = "$bpm BPM"
 
         txtDelay.text =
@@ -688,6 +633,9 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
 
+        // El editor puede reasignar botones y cambiar el acorde mientras prueba.
+        ChordSession.select(ChordSession.selectedId)
+        updateChordSlotLabels()
         RhythmSession.currentCustomBpm?.let {
             bpm = it
         }
