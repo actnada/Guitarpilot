@@ -160,7 +160,7 @@ class RhythmEditorActivity : AppCompatActivity() {
         chordButtons.forEachIndexed { slot, buttonId ->
             val button = findViewById<Button>(buttonId)
             button.setOnClickListener {
-                ChordSession.select(ChordSession.slotAt(slot))
+                ChordSession.tap(ChordSession.slotAt(slot))
                 updateChordControls()
             }
             button.setOnLongClickListener {

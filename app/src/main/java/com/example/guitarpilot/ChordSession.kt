@@ -33,10 +33,25 @@ object ChordSession {
         quickSlots[slotIndex] = chordId
     }
 
+    /**
+     * Resuelve exclusivamente el gesto de pulsación de un botón.
+     * Repetir el acorde activo vuelve a OPEN (cuerdas al aire); tocar uno
+     * diferente lo selecciona. No se usa al restaurar estado o cambiar ritmo.
+     */
+    internal fun chordAfterTap(activeId: Int, tappedId: Int): Int {
+        require(activeId in names.indices) { "Acorde activo inválido" }
+        require(tappedId in names.indices) { "Acorde pulsado inválido" }
+        return if (tappedId != 0 && tappedId == activeId) 0 else tappedId
+    }
+
+    fun tap(chordId: Int) {
+        select(chordAfterTap(selectedId, chordId))
+    }
+
     fun select(chordId: Int) {
         require(chordId in names.indices) { "Acorde inválido" }
         selectedId = chordId
-        // El cambio de acorde no modifica el transporte, tick ni BPM.
+        // OPEN = cuerda al aire, NO stop/mute. El transporte sigue sonando.
         NativeAudioEngine.setChord(chordId)
     }
 }

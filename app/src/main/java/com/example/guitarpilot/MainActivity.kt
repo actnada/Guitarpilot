@@ -563,9 +563,9 @@ class MainActivity : AppCompatActivity() {
         val selected = chordOptions.firstOrNull { it.id == id }
             ?: chordOptions.first()
 
-        // Volver a pulsar el mismo botón mantiene ese acorde.
-        // OPEN se puede asignar explícitamente a cualquiera de los seis botones.
-        ChordSession.select(selected.id)
+        // Repetir el acorde activo vuelve a OPEN sin detener el ritmo.
+        // Seleccionar o restaurar un acorde sin un gesto usa select(), no tap().
+        ChordSession.tap(selected.id)
         updateUi()
     }
 
