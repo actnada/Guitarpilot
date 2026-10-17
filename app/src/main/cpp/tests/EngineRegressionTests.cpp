@@ -7,6 +7,7 @@
 #include <iostream>
 #include <thread>
 #include <vector>
+#include <utility>
 
 struct GuitarEngineTestAccess {
     static void schedule(GuitarEngine& e, int sample, int string, int64_t frame) {
@@ -23,6 +24,32 @@ struct GuitarEngineTestAccess {
     static int count(const GuitarEngine& e) { return e.mCustomEventCount.load(); }
     static float velocity(const GuitarEngine& e) { return e.mCustomEvents[0].velocity; }
     static int activeChord(const GuitarEngine& e) { return e.mAppliedChord; }
+    static bool validMinorSeventh(const GuitarEngine& e, int id) {
+        if (id < 37 || id >= GuitarEngine::kChordCount) return false;
+        const auto& chord = e.mChords[id];
+        // Notas MIDI al aire, orden de cuerdas físicas 6..1.
+        constexpr std::array<int, 6> openMidi{{40, 45, 50, 55, 59, 64}};
+        std::array<bool, 12> actual{};
+        const int rootPc = id - 37; // C = 0, ... B = 11.
+        for (int pos = 0; pos < 6; ++pos) {
+            const int fret = chord.fret[pos];
+            if (fret == -1) continue;
+            if (fret < 0 || fret >= GuitarEngine::kMaxFrets) return false;
+            actual[(openMidi[pos] + fret) % 12] = true;
+        }
+        std::array<bool, 12> expected{};
+        for (const int delta : {0, 3, 7, 10})
+            expected[(rootPc + delta) % 12] = true;
+        if (actual != expected) return false;
+        for (const auto bass : {std::pair<int, int>{chord.rootBassString, chord.rootBassFret},
+                                std::pair<int, int>{chord.altBassString, chord.altBassFret}}) {
+            const int physical = bass.first;
+            if (physical < 1 || physical > 6) return false;
+            if (chord.fret[6 - physical] != bass.second) return false;
+        }
+        const int rootBassIndex = 6 - chord.rootBassString;
+        return (openMidi[rootBassIndex] + chord.rootBassFret) % 12 == rootPc;
+    }
     static std::vector<int> pendingSampleIndices(const GuitarEngine& e) {
         std::vector<int> result;
         for (int i = 0; i < e.mPendingAttackCount; ++i)
@@ -272,6 +299,50 @@ static void customStrumUsesLatestChordWithoutRestartingRhythm() {
           std::vector<int>({1}), "next strum uses F chord recording");
 }
 
+static void minorSeventhsHaveCorrectPitchesAndLiveSelection() {
+    Fixture f;
+    check(GuitarEngine::kChordCount == 49, "49 chords including OPEN");
+    for (int id = 37; id <= 48; ++id) {
+        check(GuitarEngineTestAccess::validMinorSeventh(f.engine, id),
+              "minor seventh voicing must contain root, b3, fifth and b7");
+    }
+
+    // El preset no contiene acordes: las muestras dependen del botón pulsado.
+    int tick=0, offset=0, type=GuitarEngine::EVENT_PLUCK_STRING;
+    int target=GuitarEngine::ALL_ALLOWED, layer=GuitarEngine::MF;
+    int physical=1, release=20, human=0;
+    float velocity=.8f, spread=0;
+    check(f.engine.setCustomPattern(16, &tick, &offset, &type, &target,
+                                    &layer, &physical, &velocity, &spread,
+                                    &release, &human, 1),
+          "minor-seventh custom pattern accepted");
+
+    f.engine.setChord(41); // Em7, primera cuerda al aire
+    f.engine.play();
+    f.render(1);
+    check(GuitarEngineTestAccess::activeChord(f.engine) == 41,
+          "Em7 selected during playback");
+    auto frame = GuitarEngineTestAccess::frame(f.engine) + 100;
+    GuitarEngineTestAccess::triggerCustomEvent(f.engine, 0, frame);
+    check(GuitarEngineTestAccess::pendingSampleIndices(f.engine) ==
+          std::vector<int>({0}), "Em7 uses first-string fret 0 recording");
+
+    const int tickBefore = GuitarEngineTestAccess::tick(f.engine);
+    f.engine.setChord(42); // Fm7, primera cuerda al traste 1
+    f.render(1);
+    check(GuitarEngineTestAccess::activeChord(f.engine) == 42,
+          "Fm7 selected without leaving JSON mode");
+    check(GuitarEngineTestAccess::tick(f.engine) == tickBefore,
+          "changing to Fm7 preserves rhythmic phase");
+    check(GuitarEngineTestAccess::pending(f.engine) == 0,
+          "pending attacks from Em7 must be cancelled");
+
+    frame = GuitarEngineTestAccess::frame(f.engine) + 100;
+    GuitarEngineTestAccess::triggerCustomEvent(f.engine, 0, frame);
+    check(GuitarEngineTestAccess::pendingSampleIndices(f.engine) ==
+          std::vector<int>({1}), "Fm7 uses first-string fret 1 recording");
+}
+
 static void pendingCapacityIsBounded() {
     Fixture f;
     for (int i=0; i<GuitarEngine::kMaxPendingAttacks+20; ++i) f.schedule(0,100+i);
@@ -320,6 +391,7 @@ int main() {
     pendingCapacityIsBounded();
     maskedStrumSupportsFourBarTicksAndExactStrings();
     customStrumUsesLatestChordWithoutRestartingRhythm();
+    minorSeventhsHaveCorrectPitchesAndLiveSelection();
     concurrentSnapshotsAreCoherent();
-    std::cout << "PASS: 13 native regressions (real engine PCM + concurrent control snapshots)\n";
+    std::cout << "PASS: 14 native regressions (real engine PCM + concurrent control snapshots)\n";
 }

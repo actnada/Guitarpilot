@@ -509,7 +509,8 @@ class MainActivity : AppCompatActivity() {
 
         val majorMenu = popup.menu.addSubMenu("Mayores")
         val minorMenu = popup.menu.addSubMenu("Menores")
-        val seventhMenu = popup.menu.addSubMenu("Séptimas")
+        val seventhMenu = popup.menu.addSubMenu("Séptimas dominantes (7)")
+        val minorSeventhMenu = popup.menu.addSubMenu("Séptimas menores (m7)")
 
         chordOptions.filter { it.id in 1..12 }.forEach {
             majorMenu.add(0, it.id, it.id, it.name)
@@ -521,6 +522,9 @@ class MainActivity : AppCompatActivity() {
 
         chordOptions.filter { it.id in 25..36 }.forEach {
             seventhMenu.add(0, it.id, it.id, it.name)
+        }
+        chordOptions.filter { it.id in 37..48 }.forEach {
+            minorSeventhMenu.add(0, it.id, it.id, it.name)
         }
 
         popup.setOnMenuItemClickListener { item ->

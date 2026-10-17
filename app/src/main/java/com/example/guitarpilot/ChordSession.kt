@@ -2,7 +2,7 @@ package com.example.guitarpilot
 
 /**
  * Estado del instrumento independiente de los ritmos.
- * Los seis botones son accesos configurables a un catálogo de 36 acordes + OPEN.
+ * Los seis botones son accesos configurables a 48 acordes + OPEN.
  * La selección se conserva entre la pantalla principal y el editor.
  */
 object ChordSession {
@@ -11,7 +11,9 @@ object ChordSession {
     val names = listOf(
         "OPEN", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B",
         "Cm", "C#m", "Dm", "D#m", "Em", "Fm", "F#m", "Gm", "G#m", "Am", "A#m", "Bm",
-        "C7", "C#7", "D7", "D#7", "E7", "F7", "F#7", "G7", "G#7", "A7", "A#7", "B7"
+        "C7", "C#7", "D7", "D#7", "E7", "F7", "F#7", "G7", "G#7", "A7", "A#7", "B7",
+        "Cm7", "C#m7", "Dm7", "D#m7", "Em7", "Fm7", "F#m7",
+        "Gm7", "G#m7", "Am7", "A#m7", "Bm7"
     )
     val options: List<ChordOption> = names.mapIndexed { id, name -> ChordOption(id, name) }
 

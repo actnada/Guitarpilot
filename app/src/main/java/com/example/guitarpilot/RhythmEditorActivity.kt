@@ -188,7 +188,8 @@ class RhythmEditorActivity : AppCompatActivity() {
         popup.menu.add(0, 0, 0, "OPEN")
         val major = popup.menu.addSubMenu("Mayores")
         val minor = popup.menu.addSubMenu("Menores")
-        val seventh = popup.menu.addSubMenu("Séptimas")
+        val seventh = popup.menu.addSubMenu("Séptimas dominantes (7)")
+        val minorSeventh = popup.menu.addSubMenu("Séptimas menores (m7)")
 
         (1..12).forEach { id ->
             major.add(0, id, id, ChordSession.names[id])
@@ -198,6 +199,9 @@ class RhythmEditorActivity : AppCompatActivity() {
         }
         (25..36).forEach { id ->
             seventh.add(0, id, id, ChordSession.names[id])
+        }
+        (37..48).forEach { id ->
+            minorSeventh.add(0, id, id, ChordSession.names[id])
         }
         popup.setOnMenuItemClickListener { item ->
             ChordSession.assign(slot, item.itemId)

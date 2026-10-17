@@ -14,7 +14,7 @@ public:
     static constexpr int kMaxVoices = 128;
     static constexpr int kStringCount = 6;
     static constexpr int kMaxFrets = 20;
-    static constexpr int kChordCount = 37; // OPEN + 12 mayores + 12 menores + 12 séptimas
+    static constexpr int kChordCount = 49; // OPEN + 12 mayores + 12 menores + 12 dominantes 7 + 12 menores 7
     static constexpr int kMaxCustomEvents = 128;
     static constexpr int kMaxPendingAttacks = kMaxCustomEvents * kStringCount + kMaxVoices;
 
@@ -318,6 +318,7 @@ private:
     // 1..12  = mayores: C, C#, D, D#, E, F, F#, G, G#, A, A#, B
     // 13..24 = menores: Cm ... Bm
     // 25..36 = séptimas dominantes: C7 ... B7
+    // 37..48 = séptimas menores (m7): Cm7 ... Bm7
     //
     // Orden de fret: cuerdas físicas 6,5,4,3,2,1.
     // Las digitaciones usan posiciones abiertas o cejillas comunes.
@@ -365,7 +366,22 @@ private:
         {{{ 4, 6, 4, 5, 4, 4}}, 6,4, 5,6}, // 33 G#7
         {{{-1, 0, 2, 0, 2, 0}}, 5,0, 4,2}, // 34 A7
         {{{-1, 1, 3, 1, 3, 1}}, 5,1, 4,3}, // 35 A#7
-        {{{-1, 2, 4, 2, 4, 2}}, 5,2, 4,4}  // 36 B7
+        {{{-1, 2, 4, 2, 4, 2}}, 5,2, 4,4}, // 36 B7
+
+        // Séptimas menores: raíz, tercera menor, quinta justa y séptima menor.
+        // La cuerda -1 queda muda. Orden físico: 6, 5, 4, 3, 2, 1.
+        {{{-1, 3, 5, 3, 4, 3}}, 5,3, 4,5}, // 37 Cm7
+        {{{-1, 4, 6, 4, 5, 4}}, 5,4, 4,6}, // 38 C#m7
+        {{{-1,-1, 0, 2, 1, 1}}, 4,0, 3,2}, // 39 Dm7 (abierto)
+        {{{-1, 6, 8, 6, 7, 6}}, 5,6, 4,8}, // 40 D#m7
+        {{{ 0, 2, 2, 0, 3, 0}}, 6,0, 5,2}, // 41 Em7 (abierto)
+        {{{ 1, 3, 1, 1, 1, 1}}, 6,1, 5,3}, // 42 Fm7
+        {{{ 2, 4, 2, 2, 2, 2}}, 6,2, 5,4}, // 43 F#m7
+        {{{ 3, 5, 3, 3, 3, 3}}, 6,3, 5,5}, // 44 Gm7
+        {{{ 4, 6, 4, 4, 4, 4}}, 6,4, 5,6}, // 45 G#m7
+        {{{-1, 0, 2, 0, 1, 0}}, 5,0, 4,2}, // 46 Am7 (abierto)
+        {{{-1, 1, 3, 1, 2, 1}}, 5,1, 4,3}, // 47 A#m7
+        {{{-1, 2, 4, 2, 3, 2}}, 5,2, 4,4}  // 48 Bm7
     }};
 
 };
