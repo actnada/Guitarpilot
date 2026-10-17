@@ -449,27 +449,32 @@ void GuitarEngine::queueTargetRelease(
 
 void GuitarEngine::applyPendingChordChange() {
     const int requestedChord = std::clamp(mChord.load(), 0, kChordCount - 1);
-
     if (requestedChord == mAppliedChord) return;
 
     const auto& oldChord = mChords[mAppliedChord].fret;
     const auto& newChord = mChords[requestedChord].fret;
 
-    // chordPos 0..5 = cuerdas físicas 6..1.
+    // Misma política que la rama testing, adaptada al scheduler con
+    // PendingAttack de version-b. El acorde seleccionado nunca reinicia
+    // el transporte y las notas activas permanecen sonando cuando sea posible.
     for (int chordPos = 0; chordPos < 6; ++chordPos) {
         const int oldFret = oldChord[chordPos];
         const int newFret = newChord[chordPos];
         const int physicalString = 6 - chordPos;
-
-        // Si la cuerda conserva exactamente el mismo traste,
-        // dejamos que siga resonando.
         if (oldFret == newFret) continue;
 
-        // Cambiar de traste también invalida la nota anterior, aunque la
-        // cuerda siga permitida. Un ritmo parcial puede no volver a tocarla
-        // durante varios golpes: no debe resonar el acorde anterior debajo.
-        // releaseString cancela ataques pendientes y apaga la cola suavemente.
-        releaseString(physicalString, 20);
+        if (newFret < 0) {
+            // En testing, una cuerda que el nuevo acorde no permite se
+            // silencia suavemente. releaseString también elimina los
+            // ataques pendientes de esa cuerda.
+            releaseString(physicalString, 20);
+        } else {
+            // El traste cambia pero la cuerda sigue permitida:
+            // conservar la resonancia de su voz activa SIN aplicar fade.
+            // Solo se cancelan los ataques pendientes calculados con el
+            // acorde anterior. El siguiente evento usará el nuevo traste.
+            cancelPendingAttacksOnString(physicalString);
+        }
     }
 
     mAppliedChord = requestedChord;

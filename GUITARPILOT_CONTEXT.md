@@ -53,8 +53,10 @@ Casos de uso:
 2. Nunca auto-avanzar acordes.
 3. Cambiar acorde no debe reiniciar el transporte.
 4. Las muestras de audio deben poder solaparse naturalmente.
-5. Un nuevo rasgueo no debe cortar la cola del anterior, salvo que exista una
-   razón física específica como una cuerda que pasa a quedar muteada.
+5. El cambio de acorde conserva las colas sonoras de las cuerdas que siguen
+   permitidas: no aplica fades por cambio de traste. Las cuerdas que el nuevo
+   acorde mutea sí reciben release breve (~20 ms), igual que en testing.
+   Los nuevos ataques usan la digitación seleccionada sin reiniciar el pulso.
 6. El patrón se repite indefinidamente hasta PAUSE o STOP.
 7. PAUSE deja de programar nuevos golpes pero permite que las colas terminen.
 8. STOP detiene la programación del patrón; la política exacta sobre cortar

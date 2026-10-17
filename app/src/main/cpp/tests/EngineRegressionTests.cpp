@@ -24,6 +24,18 @@ struct GuitarEngineTestAccess {
     static int count(const GuitarEngine& e) { return e.mCustomEventCount.load(); }
     static float velocity(const GuitarEngine& e) { return e.mCustomEvents[0].velocity; }
     static int activeChord(const GuitarEngine& e) { return e.mAppliedChord; }
+    static int sampleOnString(const GuitarEngine& e, int physical) {
+        int64_t newest = -1;
+        int sample = -1;
+        for (const auto& voice : e.mVoices) {
+            if (voice.active && voice.physicalString == physical &&
+                voice.startFrame >= newest) {
+                newest = voice.startFrame;
+                sample = voice.sampleIndex;
+            }
+        }
+        return sample;
+    }
     static bool validMinorSeventh(const GuitarEngine& e, int id) {
         if (id < 37 || id >= GuitarEngine::kChordCount) return false;
         const auto& chord = e.mChords[id];
@@ -163,19 +175,20 @@ static void controlChangesApplyOnAudioThread() {
     check(GuitarEngineTestAccess::next(f.engine) == 0, "stop resets on audio clock");
 }
 
-static void chordChangeReleasesPreviousPitchOnAllowedString() {
+static void chordChangePreservesPlayingPitchWhenStringRemainsAllowed() {
     Fixture f;
-    f.schedule(0, 0); // OPEN: primera cuerda E4, aún resonando.
+    f.schedule(0, 0); // OPEN: primera cuerda E4 todavía resonando.
     f.render(1);
-    f.schedule(0, 2000); // Ataque pendiente de la digitación anterior.
-    f.engine.setChord(3); // D: primera cuerda F#4, permitida pero otro traste.
-    // Sin tocar aún la nueva nota, la vieja debe dejar de sonar: los patrones
-    // parciales pueden tardar varios golpes en volver a atacar esta cuerda.
-    auto tail = f.render(1200);
+    f.schedule(0, 2000); // Ataque futuro con digitación vieja.
+    f.engine.setChord(3); // D: cuerda 1 cambia traste 0 -> 2, sigue permitida.
+    const auto tail = f.render(1200);
     check(GuitarEngineTestAccess::pending(f.engine) == 0,
-          "changed fret cancels attacks from the old chord");
-    check(near(tail.back(), 0),
-          "changed fret must release old pitch even without a new attack");
+          "changed fret cancels only stale future attacks");
+    check(std::all_of(tail.begin(), tail.end(), [](float sample) {
+        return near(sample, .25f);
+    }), "playing pitch must stay at constant amplitude across chord selection");
+    check(near(f.render(1)[0], .25f),
+          "old resonance remains until the next actual attack");
 }
 
 static void chordChangePreservesCommonPitch() {
@@ -299,6 +312,94 @@ static void customStrumUsesLatestChordWithoutRestartingRhythm() {
           std::vector<int>({1}), "next strum uses F chord recording");
 }
 
+static void pimamiSwitchesChordAtNextPWithoutRestarting() {
+    Fixture f;
+    // C (cuerda física 3, traste 0) y F (cuerda 3, traste 2).
+    std::vector<int16_t> pcm(96000, 8192);
+    f.engine.loadSample(2, 3, 0, GuitarEngine::MF,
+                        pcm.data(), int(pcm.size()), 48000);
+    f.engine.loadSample(3, 3, 2, GuitarEngine::MF,
+                        pcm.data(), int(pcm.size()), 48000);
+
+    f.engine.setChord(1); // C
+    f.engine.play();
+    f.render(2881); // El primer P ha ocurrido, siguiente paso I.
+    check(GuitarEngineTestAccess::tick(f.engine) == 1,
+          "PIMAMI must advance from P to I");
+    check(GuitarEngineTestAccess::activeChord(f.engine) == 1,
+          "first P of the sequence uses selected C");
+
+    f.engine.setChord(6); // F; testing aplica el acorde nuevo en el próximo P.
+    const auto beforeTick = GuitarEngineTestAccess::tick(f.engine);
+    const auto beforeNext = GuitarEngineTestAccess::next(f.engine);
+    f.render(1);
+    check(GuitarEngineTestAccess::activeChord(f.engine) == 1,
+          "PIMAMI pending chord must wait for next P, as in testing");
+    check(GuitarEngineTestAccess::tick(f.engine) == beforeTick &&
+          GuitarEngineTestAccess::next(f.engine) == beforeNext,
+          "selecting a chord must not move the PIMAMI clock");
+
+    auto advanceOne = [&f]() {
+        const auto until = GuitarEngineTestAccess::next(f.engine) -
+                           GuitarEngineTestAccess::frame(f.engine) + 1;
+        check(until > 0 && until < 25000, "valid next PIMAMI interval");
+        f.render(static_cast<int>(until));
+    };
+
+    // I-M-A-M-I siguen el acorde C hasta finalizar el ciclo.
+    advanceOne();
+    check(GuitarEngineTestAccess::tick(f.engine) == 2,
+          "first I must play without restarting at P");
+    check(GuitarEngineTestAccess::sampleOnString(f.engine, 3) == 2,
+          "first I keeps the old C chord until next P");
+    for (int step = 3; step <= 5; ++step) {
+        advanceOne();
+        check(GuitarEngineTestAccess::tick(f.engine) == step,
+              "PIMAMI preserves its exact finger sequence");
+    }
+    advanceOne(); // Último I de C; pasa al tick 0.
+    check(GuitarEngineTestAccess::tick(f.engine) == 0,
+          "PIMAMI finishes a full cycle without restarting");
+
+    advanceOne(); // Nuevo P: aplica el F pendiente.
+    check(GuitarEngineTestAccess::activeChord(f.engine) == 6,
+          "new F chord must apply at the next P");
+    check(GuitarEngineTestAccess::tick(f.engine) == 1,
+          "next cycle advances normally to I");
+    advanceOne();
+    check(GuitarEngineTestAccess::sampleOnString(f.engine, 3) == 3,
+          "new cycle I plays the F voicing sample");
+}
+
+static void liveChordChangeKeepsAudioUntilNextNote() {
+    Fixture f;
+    f.engine.setChord(1); // C, primera cuerda al aire.
+    f.engine.play();
+    f.render(1);
+    f.schedule(0, GuitarEngineTestAccess::frame(f.engine));
+    f.render(1);
+
+    f.engine.setChord(6); // F, primera cuerda traste 1.
+    const auto oldTail = f.render(1200);
+    check(std::all_of(oldTail.begin(), oldTail.end(), [](float s) {
+        return near(s, .25f);
+    }), "changing chord must not introduce a 20ms dip");
+
+    const auto next = GuitarEngineTestAccess::frame(f.engine) + 100;
+    f.schedule(1, next);
+    auto lead = f.render(100);
+    check(std::all_of(lead.begin(), lead.end(), [](float s) {
+        return near(s, .25f);
+    }), "old chord sustains right until next note");
+
+    auto attack = f.render(1);
+    check(near(attack[0], .375f),
+          "new chord sample enters with per-string crossfade");
+    f.render(240);
+    check(near(f.render(1)[0], .125f),
+          "new chord sample continues after old note fades");
+}
+
 static void minorSeventhsHaveCorrectPitchesAndLiveSelection() {
     Fixture f;
     check(GuitarEngine::kChordCount == 49, "49 chords including OPEN");
@@ -383,7 +484,7 @@ int main() {
     futureNotesSurviveAndStayChronological();
     simultaneousSameStringUsesLastAttack();
     chordMuteCancelsPendingString();
-    chordChangeReleasesPreviousPitchOnAllowedString();
+    chordChangePreservesPlayingPitchWhenStringRemainsAllowed();
     chordChangePreservesCommonPitch();
     customReleaseTargetRespectsItsScheduledFrame();
     controlChangesApplyOnAudioThread();
@@ -392,6 +493,8 @@ int main() {
     maskedStrumSupportsFourBarTicksAndExactStrings();
     customStrumUsesLatestChordWithoutRestartingRhythm();
     minorSeventhsHaveCorrectPitchesAndLiveSelection();
+    pimamiSwitchesChordAtNextPWithoutRestarting();
+    liveChordChangeKeepsAudioUntilNextNote();
     concurrentSnapshotsAreCoherent();
-    std::cout << "PASS: 14 native regressions (real engine PCM + concurrent control snapshots)\n";
+    std::cout << "PASS: 16 native regressions (real engine PCM + concurrent control snapshots)\n";
 }
